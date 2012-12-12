@@ -1,6 +1,7 @@
 TALK_INC_DIR = ./libjingle-0.6.14
 EXPAT_INC_DIR = /usr/include
 SSL_INC_DIR =  /usr/include/openssl
+OBJS_DIR = ./obj
 
 AR = ar
 CC = g++
@@ -9,20 +10,28 @@ LDFLAGS = -lexpat -lssl -lcrypto -lpthread -lrt
 
 LIB_SRCS =
 include libjingle_build.mk
-LIB_OBJS = ${LIB_SRCS:.cc=.o}
+#LIB_OBJS = ${LIB_SRCS:.cc=.o}
+LIB_OBJS = ${LIB_SRCS:%.cc=$(OBJS_DIR)/%.o}
+
 
 APP_SRCS =
 include app_build.mk
-APP_OBJS = ${APP_SRCS:.cpp=.o}
+#APP_OBJS = ${APP_SRCS:.cpp=.o}
+APP_OBJS = ${APP_SRCS:%.cpp=$(OBJS_DIR)/%.o}
 
 LIB = libjingle.a
 TARGET = ProbICE
 
-%.o: %.cpp
+$(OBJS_DIR)/%.o : %.c
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
-%.o: %.cc
+
+$(OBJS_DIR)/%.o : %.cc
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
-%.o: %.c
+
+$(OBJS_DIR)/%.o : %.cpp
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(LIB): $(LIB_OBJS)
@@ -34,7 +43,6 @@ $(TARGET): $(LIB) $(APP_OBJS)
 .PHONY: clean all
 all: $(TARGET)
 clean:
-	rm -f $(APP_OBJS)
 	rm -f $(TARGET)
-	rm -f $(LIB_OBJS)
 	rm -f $(LIB)
+	rm -rf $(OBJS_DIR)
