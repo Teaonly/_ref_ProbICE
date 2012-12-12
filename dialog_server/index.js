@@ -6,21 +6,55 @@ Array.prototype.remove = function(e) {
 };
 
 
-// PeerClass define
+// PeerClass
 function PeerClass(sock) {
     this.pid = null;
     this.xmlWord = "";
     this.sock = sock;
 }
-var peerObjects = [];
-
+var peerObjects = {};
 
 
 // PeerServer
 var PeerServer = {};
+
+PeerServer.processDialog = function(peer) {
+    var wordBegin = peer.xmlWord.indexOf("<");
+    var wordEnd = peer.xmlWord.indexOf(">");
+    var sentence = peer.xmlWord.substring(wordBegin+1, wordEnd);
+    
+    var words = sentence.split(":");
+    if ( words[0] == "login") {
+        peer.pid = words[1];
+ 
+        for (var p in peerObjects) {
+            var pid = peerObjects[p].pid;
+            var xml = "<online:" + pid + ">";
+            peer.sock.write(xml);
+        }     
+       
+        //tell to all the others 
+        var xml = "<online:" + peer.pid + ">";
+        for(var p in peerObjects) {
+            peerObjects[p].sock.write(xml);
+        } 
+        //added to hash
+        peerObjects[ peer.pid ] = peer;         
+    } else if ( words[0] == "send") {
+        if ( peer.pid == null)                  //login first
+            return;
+        
+        var remote = words[1];
+        var content = words[2];
+        if (peerObjects.hasOwnProperty(remote)) {
+            var remotePeer = peerObjects[remote];
+            remotePeer.sock.write("<message:" + peer.pid + ":" + content + ">");
+        }
+    }   
+}
+
 PeerServer.onAccept = function(sock) {
     var peer = new PeerClass(sock);    
-    peerObjects.push(peer);
 
     sock.setTimeout(0);
     sock.setEncoding("utf8");
@@ -28,25 +62,28 @@ PeerServer.onAccept = function(sock) {
 };
 
 PeerServer.onConnected = function(peer) {
-    peer.sock.write("Hi\r\n");
-    return;
 }
 PeerServer.onClose = function(peer, hasError) {
-    return;
+    // remove from hash
+    delete peerObjects[peer.pid];
+    var xml = "<offline:" + peer.pid + ">";
+
+    // tell the others
+    for (var p in peerObjects) {
+        peerObjects[p].sock.write(xml);
+    }     
 }
 PeerServer.onData = function(peer, d) {
-
     for(var i = 0; i < d.length; i++) {
         peer.xmlWord += d.substr(i,1);
 
         if(d.charAt(i) == '>') {
-            peer.sock.write("You say:" + peer.xmlWord);
-            peer.xmlWord = "";    
+            PeerServer.processDialog(peer);
+            peer.xmlWord = "";
         }
     };
     return; 
 }
-
 
 // create the server
 var net = require("net");
