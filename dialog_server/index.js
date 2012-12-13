@@ -109,6 +109,6 @@ net.createServer(function(sock) {
         PeerServer.onData(peer, d);
     });
 
-}).listen(1080);        
+}).listen(1979);        
 
 
