@@ -26,7 +26,14 @@ PeerServer.processDialog = function(peer) {
     var words = sentence.split(":");
     if ( words[0] == "login") {
         peer.pid = words[1];
- 
+
+        // kickoff the old one with same id
+        if ( peerObjects.hasOwnProperty(peer.pid) ) {
+            peerObjects[peer.pid].sock.end();
+            delete peerObjects[peer.pid];
+        }
+
+        // send the online list 
         for (var p in peerObjects) {
             var pid = peerObjects[p].pid;
             var xml = "<online:" + pid + ">";
