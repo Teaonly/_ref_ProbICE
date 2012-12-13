@@ -9,11 +9,12 @@ public:
     IceProber();
     ~IceProber(); 
     
-    void onOnLine();
+    virtual void OnMessage(talk_base::Message *msg);
+    void onOnLine(bool isOk);
     void onOffline();
-    void onRemoteOnline(std::string &);
-    void onRemoteOffline(std::string &);
-    void onRemoteMessage(std::string &, std::string &);
+    void onRemoteOnline(const std::string &);
+    void onRemoteOffline(const std::string &);
+    void onRemoteMessage(const std::string &, const std::string &);
 
 private:
     talk_base::Thread *signal_thread_;

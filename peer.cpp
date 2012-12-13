@@ -118,6 +118,29 @@ void Peer::onReadEvent(talk_base::AsyncSocket* socket) {
 }
 
 void Peer::processXML() {
+    std::vector<std::string > words;
+    
+    words.clear();
+    std::string currentWord = "";
+    for(int i = 1; i < (int)xmlBuffer.size(); i++) {
+        if ( xmlBuffer[i] == ':' || xmlBuffer[i] == '>') {
+            words.push_back(currentWord);
+            currentWord = "";
+        } else {
+            currentWord = currentWord.append(1, xmlBuffer[i]);
+        }
+    }
+
+    if ( words.size() > 0) {
+        if ( words[0] == "online" ) {
+            SignalRemoteOnline(words[1]);
+        } else if ( words[0] == "offline" ) {
+            SignalRemoteOffline(words[1]);
+        } else if ( words[0] == "message" ) {
+            SignalRemoteMessage(words[1], words[2]);
+        }
+    }
+
 }
 
 

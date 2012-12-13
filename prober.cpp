@@ -1,3 +1,4 @@
+#include <iostream>
 #include "prober.h"
 
 IceProber::IceProber() {
@@ -9,24 +10,30 @@ IceProber::~IceProber() {
 
 }
 
-void IceProber::onOnLine() {
-
+void IceProber::onOnLine(bool isOk) {
+    if ( isOk ) {
+        std::cout << "Connected to server is OK" << std::endl;
+    } else {
+        std::cout << "Can't connect to server" << std::endl;
+    }
 }
 
 void IceProber::onOffline() {
-
+    std::cout << "Disconnect to server" << std::endl;
 }
 
-void IceProber::onRemoteOnline(std::string &) {
-
+void IceProber::onRemoteOnline(const std::string &remote) {
+    std::cout << "Remote (" << remote << ") is online" << std::endl;
 }
 
-void IceProber::onRemoteOffline(std::string &){
-
+void IceProber::onRemoteOffline(const std::string &remote){
+    std::cout << "Remote (" << remote << ") is offline" << std::endl;
 }
 
-void IceProber::onRemoteMessage(std::string &, std::string &) {
-
+void IceProber::onRemoteMessage(const std::string &remote, const std::string &msg) {
+    std::cout << "Remote (" << remote << ") say to me: " << msg << std::endl;
 }
 
+void IceProber::OnMessage(talk_base::Message *msg) { 
+}
 
