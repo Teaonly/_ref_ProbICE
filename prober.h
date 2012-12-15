@@ -4,6 +4,8 @@
 #include "talk/base/thread.h"
 #include "talk/base/messagequeue.h"
 
+class PPSession;
+
 class IceProber : public sigslot::has_slots<>, public talk_base::MessageHandler {  
 public:
     IceProber();
@@ -17,6 +19,7 @@ public:
     void onRemoteMessage(const std::string &, const std::string &);
 
 private:
+    PPSession *session_;
     talk_base::Thread *signal_thread_;
     talk_base::Thread *worker_thread_;    
 };

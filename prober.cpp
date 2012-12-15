@@ -1,9 +1,12 @@
 #include <iostream>
 #include "prober.h"
+#include "ppsession.h"
 
 IceProber::IceProber() {
     signal_thread_ = NULL;
     worker_thread_ = NULL;
+    
+    session_ = new PPSession(NULL, NULL, NULL);
 }
 
 IceProber::~IceProber() {
