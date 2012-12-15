@@ -20,6 +20,39 @@ PPSession::PPSession( const std::string& sid,
 }
 
 PPSession::~PPSession() {
+
+}
+
+void PPSession::OnMessage(talk_base::Message *pmsg) {
+  // preserve this because BaseSession::OnMessage may modify it
+  State orig_state = state();
+
+  BaseSession::OnMessage(pmsg);
+
+  switch (pmsg->message_id) {
+  case MSG_ERROR:
+    TerminateWithReason(STR_TERMINATE_ERROR);
+    break;
+
+  case MSG_STATE:
+    switch (orig_state) {
+    case STATE_SENTREJECT:
+    case STATE_RECEIVEDREJECT:
+      // Assume clean termination.
+      Terminate();
+      break;
+
+    case STATE_SENTTERMINATE:
+    case STATE_RECEIVEDTERMINATE:
+      //session_manager_->DestroySession(this); FIXME      
+      break;
+
+    default:
+      // Explicitly ignoring some states here.
+      break;
+    }
+    break;
+  }
 }
 
 bool PPSession::Initiate(const SessionDescription* sdesc) {
@@ -402,53 +435,12 @@ bool BareJidsEqual(const std::string& name1,
   return jid1.IsValid() && jid2.IsValid() && jid1.BareEquals(jid2);
 }
 
-bool PPSession::CheckState(State expected, MessageError* error) {
-  ASSERT(state() == expected);
-  if (state() != expected) {
-    error->SetType(buzz::QN_STANZA_NOT_ALLOWED);
-    error->SetText("message not allowed in current state");
-    return false;
-  }
-  return true;
-}
-
 void PPSession::SetError(Error error) {
   BaseSession::SetError(error);
   if (error != ERROR_NONE)
     signaling_thread()->Post(this, MSG_ERROR);
 }
 
-void PPSession::OnMessage(talk_base::Message *pmsg) {
-  // preserve this because BaseSession::OnMessage may modify it
-  State orig_state = state();
-
-  BaseSession::OnMessage(pmsg);
-
-  switch (pmsg->message_id) {
-  case MSG_ERROR:
-    TerminateWithReason(STR_TERMINATE_ERROR);
-    break;
-
-  case MSG_STATE:
-    switch (orig_state) {
-    case STATE_SENTREJECT:
-    case STATE_RECEIVEDREJECT:
-      // Assume clean termination.
-      Terminate();
-      break;
-
-    case STATE_SENTTERMINATE:
-    case STATE_RECEIVEDTERMINATE:
-      //session_manager_->DestroySession(this); FIXME      
-      break;
-
-    default:
-      // Explicitly ignoring some states here.
-      break;
-    }
-    break;
-  }
-}
 
 bool PPSession::SendInitiateMessage(const SessionDescription* sdesc,
                                   SessionError* error) {
@@ -534,6 +526,16 @@ void PPSession::SendAcknowledgementMessage(const buzz::XmlElement* stanza) {
   ack->SetAttr(buzz::QN_TYPE, "result");
 
   SignalOutgoingMessage(this, ack.get());
+}
+
+bool PPSession::CheckState(State expected, MessageError* error) {
+  ASSERT(state() == expected);
+  if (state() != expected) {
+    error->SetType(buzz::QN_STANZA_NOT_ALLOWED);
+    error->SetText("message not allowed in current state");
+    return false;
+  }
+  return true;
 }
 
 
