@@ -6,7 +6,7 @@ IceProber::IceProber() {
     signal_thread_ = NULL;
     worker_thread_ = NULL;
     
-    session_ = new PPSession(NULL, NULL, NULL);
+    //session_ = new PPSession("ppcam", "streaming", "haha", NULL, NULL, NULL);
 }
 
 IceProber::~IceProber() {

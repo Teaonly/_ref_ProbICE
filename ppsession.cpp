@@ -11,11 +11,16 @@ using namespace cricket;
 
 PPSession::PPSession( const std::string& sid,
                       const std::string& content_type,
-                      bool isInitialtor)
-    : BaseSession(NULL, //session_manager->signaling_thread(),
-                  NULL, //session_manager->worker_thread(),
-                  NULL, //session_manager->port_allocator(),
+                      const std::string& remote,
+                      bool isInitialtor,
+                      talk_base::Thread* signal_thread,
+                      talk_base::Thread* worker_thread,
+                      PortAllocator* port_allocator)                     
+    : BaseSession(signal_thread,
+                  worker_thread,
+                  port_allocator,
                   sid, content_type, isInitialtor) {
+  remote_ = remote;      
   initiate_acked_ = false;
 }
 
@@ -55,6 +60,52 @@ void PPSession::OnMessage(talk_base::Message *pmsg) {
   }
 }
 
+void PPSession::SetError(Error error) {
+  BaseSession::SetError(error);
+  if (error != ERROR_NONE)
+    signaling_thread()->Post(this, MSG_ERROR);
+}
+
+void PPSession::OnIncomingMessage(const PPMessage& msg) {
+  ASSERT(signaling_thread()->IsCurrent());
+  ASSERT(state() == STATE_INIT || msg.from == remote_name());
+
+  bool valid = false;
+  MessageError error;
+  switch (msg.type) {
+    case PPACTION_SESSION_INITIATE:
+      valid = OnInitiateMessage(msg, &error);
+      break;
+    case PPACTION_SESSION_INFO:
+      valid = OnInfoMessage(msg);
+      break;
+    case PPACTION_SESSION_ACCEPT:
+      valid = OnAcceptMessage(msg, &error);
+      break;
+    case PPACTION_SESSION_REJECT:
+      valid = OnRejectMessage(msg, &error);
+      break;
+    case PPACTION_SESSION_TERMINATE:
+      valid = OnTerminateMessage(msg, &error);
+      break;
+    case PPACTION_TRANSPORT_INFO:
+      valid = OnTransportInfoMessage(msg, &error);
+      break;
+    default:
+      error.SetType(buzz::QN_STANZA_BAD_REQUEST);
+      error.SetText("unknown session message type");
+      valid = false;
+  }
+
+  if (valid) {
+    //SendAcknowledgementMessage(msg.stanza);   //FIXME
+    SendAcknowledgementMessage(NULL);
+  } else {
+    SignalErrorMessage(this, msg);  
+  }
+
+}
+
 bool PPSession::Initiate(const SessionDescription* sdesc) {
   ASSERT(signaling_thread()->IsCurrent());
   SessionError error;
@@ -80,6 +131,7 @@ bool PPSession::Initiate(const SessionDescription* sdesc) {
 
   SpeculativelyConnectAllTransportChannels();
   return true;
+
 }
 
 bool PPSession::Accept(const SessionDescription* sdesc) {
@@ -149,12 +201,16 @@ bool PPSession::TerminateWithReason(const std::string& reason) {
   return true;
 }
 
-bool PPSession::SendInfoMessage(const XmlElements& elems) {
-  ASSERT(signaling_thread()->IsCurrent());
-  SessionError error;
-  if (!SendMessage(ACTION_SESSION_INFO, elems, &error)) {
-    LOG(LS_ERROR) << "Could not send info message " << error.text;
-    return false;
+bool PPSession::CreateTransportProxies(const TransportInfos& tinfos,
+                                     SessionError* error) {
+  for (TransportInfos::const_iterator tinfo = tinfos.begin();
+       tinfo != tinfos.end(); ++tinfo) {
+    if (tinfo->transport_type != transport_type()) {
+      error->SetText("No supported transport in offer.");
+      return false;
+    }
+
+    GetOrCreateTransportProxy(tinfo->content_name);
   }
   return true;
 }
@@ -168,6 +224,28 @@ TransportInfos PPSession::GetEmptyTransportInfos(
         TransportInfo(content->name, transport_type(), Candidates()));
   }
   return tinfos;
+}
+
+bool PPSession::CheckState(State expected, MessageError* error) {
+  ASSERT(state() == expected);
+  if (state() != expected) {
+    error->SetType(buzz::QN_STANZA_NOT_ALLOWED);
+    error->SetText("message not allowed in current state");
+    return false;
+  }
+  return true;
+}
+
+void PPSession::OnInitiateAcked() {
+    // TODO: This is to work around server re-ordering
+    // messages.  We send the candidates once the session-initiate
+    // is acked.  Once we have fixed the server to guarantee message
+    // order, we can remove this case.
+  if (!initiate_acked_) {
+    initiate_acked_ = true;
+    SessionError error;
+    SendAllUnsentTransportInfoMessages(&error);
+  }
 }
 
 bool PPSession::OnRemoteCandidates(
@@ -201,20 +279,6 @@ bool PPSession::OnRemoteCandidates(
     transproxy->impl()->OnRemoteCandidates(tinfo->candidates);
   }
 
-  return true;
-}
-
-bool PPSession::CreateTransportProxies(const TransportInfos& tinfos,
-                                     SessionError* error) {
-  for (TransportInfos::const_iterator tinfo = tinfos.begin();
-       tinfo != tinfos.end(); ++tinfo) {
-    if (tinfo->transport_type != transport_type()) {
-      error->SetText("No supported transport in offer.");
-      return false;
-    }
-
-    GetOrCreateTransportProxy(tinfo->content_name);
-  }
   return true;
 }
 
@@ -269,74 +333,14 @@ void PPSession::OnTransportCandidatesReady(Transport* transport,
   }
 }
 
-void PPSession::OnTransportSendError(Transport* transport,
-                                   const buzz::XmlElement* stanza,
-                                   const buzz::QName& name,
-                                   const std::string& type,
-                                   const std::string& text,
-                                   const buzz::XmlElement* extra_info) {
-  ASSERT(signaling_thread()->IsCurrent());
-  SignalErrorMessage(this, stanza, name, type, text, extra_info);
-}
-
 void PPSession::OnTransportChannelGone(Transport* transport,
                                      const std::string& name) {
   ASSERT(signaling_thread()->IsCurrent());
   SignalChannelGone(this, name);
 }
 
-void PPSession::OnIncomingMessage(const SessionMessage& msg) {
-  ASSERT(signaling_thread()->IsCurrent());
-  //ASSERT(state() == STATE_INIT || msg.from == remote_name());
 
-  bool valid = false;
-  MessageError error;
-  switch (msg.type) {
-    case ACTION_SESSION_INITIATE:
-      valid = OnInitiateMessage(msg, &error);
-      break;
-    case ACTION_SESSION_INFO:
-      valid = OnInfoMessage(msg);
-      break;
-    case ACTION_SESSION_ACCEPT:
-      valid = OnAcceptMessage(msg, &error);
-      break;
-    case ACTION_SESSION_REJECT:
-      valid = OnRejectMessage(msg, &error);
-      break;
-    case ACTION_SESSION_TERMINATE:
-      valid = OnTerminateMessage(msg, &error);
-      break;
-    case ACTION_TRANSPORT_INFO:
-      valid = OnTransportInfoMessage(msg, &error);
-      break;
-    default:
-      error.SetType(buzz::QN_STANZA_BAD_REQUEST);
-      error.SetText("unknown session message type");
-      valid = false;
-  }
-
-  if (valid) {
-    SendAcknowledgementMessage(msg.stanza);
-  } else {
-    SignalErrorMessage(this, msg.stanza, error.type,
-                       "modify", error.text, NULL);
-  }
-}
-
-void PPSession::OnInitiateAcked() {
-    // TODO: This is to work around server re-ordering
-    // messages.  We send the candidates once the session-initiate
-    // is acked.  Once we have fixed the server to guarantee message
-    // order, we can remove this case.
-  if (!initiate_acked_) {
-    initiate_acked_ = true;
-    SessionError error;
-    SendAllUnsentTransportInfoMessages(&error);
-  }
-}
-
-bool PPSession::OnInitiateMessage(const SessionMessage& msg,
+bool PPSession::OnInitiateMessage(const PPMessage& msg,
                                 MessageError* error) {
   if (!CheckState(STATE_INIT, error))
     return false;
@@ -363,7 +367,7 @@ bool PPSession::OnInitiateMessage(const SessionMessage& msg,
   return true;
 }
 
-bool PPSession::OnAcceptMessage(const SessionMessage& msg, MessageError* error) {
+bool PPSession::OnAcceptMessage(const PPMessage& msg, MessageError* error) {
   if (!CheckState(STATE_SENTINITIATE, error))
     return false;
 
@@ -388,7 +392,7 @@ bool PPSession::OnAcceptMessage(const SessionMessage& msg, MessageError* error) 
   return true;
 }
 
-bool PPSession::OnRejectMessage(const SessionMessage& msg, MessageError* error) {
+bool PPSession::OnRejectMessage(const PPMessage& msg, MessageError* error) {
   if (!CheckState(STATE_SENTINITIATE, error))
     return false;
 
@@ -396,16 +400,15 @@ bool PPSession::OnRejectMessage(const SessionMessage& msg, MessageError* error) 
   return true;
 }
 
-bool PPSession::OnInfoMessage(const SessionMessage& msg) {
-  SignalInfoMessage(this, msg.action_elem);
+bool PPSession::OnInfoMessage(const PPMessage& msg) {
+  //SignalInfoMessage(this, msg.action_elem);
   return true;
 }
 
-bool PPSession::OnTerminateMessage(const SessionMessage& msg,
+bool PPSession::OnTerminateMessage(const PPMessage& msg,
                                  MessageError* error) {
   SessionTerminate term;
-  if (!ParseSessionTerminate(msg.protocol, msg.action_elem, &term, error))
-    return false;
+  // msg ==> term FIXME
 
   SignalReceivedTerminateReason(this, term.reason);
   if (term.debug_reason != buzz::STR_EMPTY) {
@@ -416,7 +419,7 @@ bool PPSession::OnTerminateMessage(const SessionMessage& msg,
   return true;
 }
 
-bool PPSession::OnTransportInfoMessage(const SessionMessage& msg,
+bool PPSession::OnTransportInfoMessage(const PPMessage& msg,
                                      MessageError* error) {
   TransportInfos tinfos;
   // msg ==> tinfos  FIXME  
@@ -427,19 +430,6 @@ bool PPSession::OnTransportInfoMessage(const SessionMessage& msg,
   return true;
 }
 
-bool BareJidsEqual(const std::string& name1,
-                   const std::string& name2) {
-  buzz::Jid jid1(name1);
-  buzz::Jid jid2(name2);
-
-  return jid1.IsValid() && jid2.IsValid() && jid1.BareEquals(jid2);
-}
-
-void PPSession::SetError(Error error) {
-  BaseSession::SetError(error);
-  if (error != ERROR_NONE)
-    signaling_thread()->Post(this, MSG_ERROR);
-}
 
 
 bool PPSession::SendInitiateMessage(const SessionDescription* sdesc,
@@ -510,9 +500,9 @@ bool PPSession::SendMessage(ActionType type, const XmlElements& action_elems,
   talk_base::scoped_ptr<buzz::XmlElement> stanza(
       new buzz::XmlElement(buzz::QN_IQ));
 
-  //SessionMessage msg(current_protocol_, type, id(), initiator_name());
+  //PPMessage msg(current_protocol_, type, id(), initiator_name());
   //msg.to = remote_name();
-  //WriteSessionMessage(msg, action_elems, stanza.get());
+  //WritePPMessage(msg, action_elems, stanza.get());
 
   SignalOutgoingMessage(this, stanza.get());
   return true;
@@ -526,16 +516,6 @@ void PPSession::SendAcknowledgementMessage(const buzz::XmlElement* stanza) {
   ack->SetAttr(buzz::QN_TYPE, "result");
 
   SignalOutgoingMessage(this, ack.get());
-}
-
-bool PPSession::CheckState(State expected, MessageError* error) {
-  ASSERT(state() == expected);
-  if (state() != expected) {
-    error->SetType(buzz::QN_STANZA_NOT_ALLOWED);
-    error->SetText("message not allowed in current state");
-    return false;
-  }
-  return true;
 }
 
 

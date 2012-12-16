@@ -5,32 +5,35 @@
 #include "talk/base/thread.h"
 #include "talk/base/logging.h"
 #include "talk/p2p/base/session.h"
+#include "ppmessage.h"
 
 using namespace cricket;
 
 class PPSession : public BaseSession {
 public:
-    PPSession(const std::string& sid, const std::string& content_type, bool isInitialtor);
+    PPSession(const std::string& sid, 
+              const std::string& content_type,
+              const std::string& remote, 
+              bool isInitialtor,
+              talk_base::Thread* signal_thread,
+              talk_base::Thread* worker_thread,
+              PortAllocator* port_allocator);
     ~PPSession();
 
-    virtual void OnMessage(talk_base::Message *pmsg);
 
     sigslot::signal1<PPSession*> SignalRequestSignaling;
     sigslot::signal2<PPSession* , const buzz::XmlElement*> SignalOutgoingMessage;
     sigslot::signal2<PPSession*, const std::string&> SignalReceivedTerminateReason;
     sigslot::signal2<PPSession*, const std::string&> SignalChannelGone;     // Invoked when we notice that there is no matching channel on our peer.
     sigslot::signal2<PPSession*, const buzz::XmlElement*> SignalInfoMessage;
-    sigslot::signal6<BaseSession*,
-        const buzz::XmlElement*,
-        const buzz::QName&,
-        const std::string&,
-        const std::string&,
-        const buzz::XmlElement*> SignalErrorMessage;
+    sigslot::signal2<PPSession*, const PPMessage&> SignalErrorMessage;
 
+    virtual void OnMessage(talk_base::Message *pmsg);
+    std::string remote_name() {return remote_;}
     virtual void SetError(Error error);
     void OnSignalingReady() { BaseSession::OnSignalingReady(); }
-    void OnIncomingMessage(const SessionMessage& msg);
-    bool SendInfoMessage(const XmlElements& elems);
+    void OnIncomingMessage(const PPMessage& msg);
+    
     bool Initiate(const SessionDescription* sdesc);
     bool Accept(const SessionDescription* sdesc);
     bool Reject(const std::string& reason);
@@ -54,12 +57,6 @@ private:
     virtual void OnTransportWritable(Transport* transport);
     virtual void OnTransportCandidatesReady(Transport* transport,
             const Candidates& candidates);
-    virtual void OnTransportSendError(Transport* transport,
-            const buzz::XmlElement* stanza,
-            const buzz::QName& name,
-            const std::string& type,
-            const std::string& text,
-            const buzz::XmlElement* extra_info);
     virtual void OnTransportChannelGone(Transport* transport,
             const std::string& name);
 
@@ -81,13 +78,14 @@ private:
 
     // Handlers for the various types of messages.  These functions may take
     // pointers to the whole stanza or to just the session element.
-    bool OnInitiateMessage(const SessionMessage& msg, MessageError* error);
-    bool OnAcceptMessage(const SessionMessage& msg, MessageError* error);
-    bool OnRejectMessage(const SessionMessage& msg, MessageError* error);
-    bool OnInfoMessage(const SessionMessage& msg);
-    bool OnTerminateMessage(const SessionMessage& msg, MessageError* error);
-    bool OnTransportInfoMessage(const SessionMessage& msg, MessageError* error);
-
+    bool OnInitiateMessage(const PPMessage& msg, MessageError* error);
+    bool OnAcceptMessage(const PPMessage& msg, MessageError* error);
+    bool OnRejectMessage(const PPMessage& msg, MessageError* error);
+    bool OnInfoMessage(const PPMessage& msg);
+    bool OnTerminateMessage(const PPMessage& msg, MessageError* error);
+    bool OnTransportInfoMessage(const PPMessage& msg, MessageError* error);
+    
+    std::string remote_;
     bool initiate_acked_;
 };
 
