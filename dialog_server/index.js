@@ -52,10 +52,15 @@ PeerServer.processDialog = function(peer) {
             return;
         
         var remote = words[1];
-        var content = words[2];
         if (peerObjects.hasOwnProperty(remote)) {
             var remotePeer = peerObjects[remote];
-            remotePeer.sock.write("<message:" + peer.pid + ":" + content + ">");
+            var sndMessage = "<message:" + peer.pid;
+            for ( var i = 2; i < words.length; i++) {
+                //remotePeer.sock.write("<message:" + peer.pid + ":" + content + ">");
+                sndMessage = sndMessage + ":" + words[i];
+            }
+            sndMessage = sndMessage + ">"
+            remotePeer.sock.write(sndMessage);
         }
     }   
 }

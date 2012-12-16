@@ -20,7 +20,6 @@ public:
               PortAllocator* port_allocator);
     ~PPSession();
 
-
     sigslot::signal1<PPSession*> SignalRequestSignaling;
     sigslot::signal2<PPSession* , const buzz::XmlElement*> SignalOutgoingMessage;
     sigslot::signal2<PPSession*, const std::string&> SignalReceivedTerminateReason;
@@ -30,7 +29,6 @@ public:
 
     virtual void OnMessage(talk_base::Message *pmsg);
     std::string remote_name() {return remote_;}
-    virtual void SetError(Error error);
     void OnSignalingReady() { BaseSession::OnSignalingReady(); }
     void OnIncomingMessage(const PPMessage& msg);
     
@@ -44,7 +42,7 @@ public:
 
 private:
     // some inernal help functions
-    bool CreateTransportProxies(const TransportInfos& tinfos, SessionError* error);
+    bool CreateTransportProxies(std::vector<P2PInfo>& p2pInfos, SessionError* error);
     TransportInfos GetEmptyTransportInfos(const ContentInfos& contents) const; // Description to transportinfo
     bool CheckState(State state, MessageError* error);
     void OnInitiateAcked();

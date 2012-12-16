@@ -1,12 +1,6 @@
 #include "talk/base/helpers.h"
 #include "ppsession.h"
 
-namespace {
-    const uint32 MSG_TIMEOUT = 1; 
-    const uint32 MSG_ERROR = 2; 
-    const uint32 MSG_STATE = 3;
-}  // namespace
-
 using namespace cricket;
 
 PPSession::PPSession( const std::string& sid,
@@ -29,41 +23,7 @@ PPSession::~PPSession() {
 }
 
 void PPSession::OnMessage(talk_base::Message *pmsg) {
-  // preserve this because BaseSession::OnMessage may modify it
-  State orig_state = state();
-
   BaseSession::OnMessage(pmsg);
-
-  switch (pmsg->message_id) {
-  case MSG_ERROR:
-    TerminateWithReason(STR_TERMINATE_ERROR);
-    break;
-
-  case MSG_STATE:
-    switch (orig_state) {
-    case STATE_SENTREJECT:
-    case STATE_RECEIVEDREJECT:
-      // Assume clean termination.
-      Terminate();
-      break;
-
-    case STATE_SENTTERMINATE:
-    case STATE_RECEIVEDTERMINATE:
-      //session_manager_->DestroySession(this); FIXME      
-      break;
-
-    default:
-      // Explicitly ignoring some states here.
-      break;
-    }
-    break;
-  }
-}
-
-void PPSession::SetError(Error error) {
-  BaseSession::SetError(error);
-  if (error != ERROR_NONE)
-    signaling_thread()->Post(this, MSG_ERROR);
 }
 
 void PPSession::OnIncomingMessage(const PPMessage& msg) {
@@ -116,8 +76,9 @@ bool PPSession::Initiate(const SessionDescription* sdesc) {
 
   // Setup for signaling.
   set_local_description(sdesc);
-  if (!CreateTransportProxies(GetEmptyTransportInfos(sdesc->contents()),
-                              &error)) {
+  std::vector<P2PInfo> p2pInfos;
+  // FIXME convert from SessionDescription to P2PInfos
+  if( !CreateTransportProxies(p2pInfos, &error)) {
     LOG(LS_ERROR) << "Could not create transports: " << error.text;
     return false;
   }
@@ -201,17 +162,11 @@ bool PPSession::TerminateWithReason(const std::string& reason) {
   return true;
 }
 
-bool PPSession::CreateTransportProxies(const TransportInfos& tinfos,
-                                     SessionError* error) {
-  for (TransportInfos::const_iterator tinfo = tinfos.begin();
-       tinfo != tinfos.end(); ++tinfo) {
-    if (tinfo->transport_type != transport_type()) {
-      error->SetText("No supported transport in offer.");
-      return false;
-    }
-
-    GetOrCreateTransportProxy(tinfo->content_name);
+bool PPSession::CreateTransportProxies(std::vector<P2PInfo>& p2pInfos, SessionError* error) {
+  for (int i = 0; i < (int)p2pInfos.size(); i++) {
+    GetOrCreateTransportProxy(p2pInfos[i].content_name);
   }
+  
   return true;
 }
 
@@ -301,11 +256,13 @@ void PPSession::OnTransportWritable(Transport* transport) {
   // terminate since we can't actually send data.  If the transport is writable,
   // cancel the timer.  Note that writability transitions may occur repeatedly
   // during the lifetime of the session.
+  /*
   signaling_thread()->Clear(this, MSG_TIMEOUT);
   if (transport->HasChannels() && !transport->writable()) {
     signaling_thread()->PostDelayed(
         10 * 1000, this, MSG_TIMEOUT);
   }
+  */
 }
 
 void PPSession::OnTransportCandidatesReady(Transport* transport,
@@ -340,29 +297,30 @@ void PPSession::OnTransportChannelGone(Transport* transport,
 }
 
 
-bool PPSession::OnInitiateMessage(const PPMessage& msg,
-                                MessageError* error) {
+bool PPSession::OnInitiateMessage(const PPMessage& msg, MessageError* error) {
   if (!CheckState(STATE_INIT, error))
     return false;
 
-  SessionInitiate init;
-  // msg ==> init FIXME
-
   SessionError session_error;
-  if (!CreateTransportProxies(init.transports, &session_error)) {
+  std::vector<P2PInfo> p2pInfos;
+
+  if (!CreateTransportProxies(p2pInfos, &session_error)) {
     error->SetType(buzz::QN_STANZA_NOT_ACCEPTABLE);
     error->SetText(session_error.text);
     return false;
   }
+  
+  // FIXME TODO  
+  //set_remote_description(new SessionDescription(init.ClearContents(),
+  //                                              init.groups));
 
-  set_remote_description(new SessionDescription(init.ClearContents(),
-                                                init.groups));
   SetState(STATE_RECEIVEDINITIATE);
 
   // Users of Session may listen to state change and call Reject().
   if (state() != STATE_SENTREJECT) {
-    if (!OnRemoteCandidates(init.transports, error))
-      return false;
+    // FIXME TODO TODO TODO
+    //if (!OnRemoteCandidates(init.transports, error))
+    //  return false;
   }
   return true;
 }
@@ -517,5 +475,4 @@ void PPSession::SendAcknowledgementMessage(const buzz::XmlElement* stanza) {
 
   SignalOutgoingMessage(this, ack.get());
 }
-
 
