@@ -5,19 +5,18 @@ using namespace cricket;
 
 PPSession::PPSession( const std::string& sid,
         const std::string& content_type,
-        bool isInitialtor,
         talk_base::Thread* signal_thread,
         talk_base::Thread* worker_thread,
         PortAllocator* port_allocator)                     
 : BaseSession(signal_thread,
         worker_thread,
         port_allocator,
-        sid, content_type, isInitialtor) {
+        sid, content_type, true) {
     initiate_acked_ = false;
 }
 
 PPSession::~PPSession() {
-
+    
 }
 
 void PPSession::OnMessage(talk_base::Message *pmsg) {
@@ -88,7 +87,7 @@ bool PPSession::Initiate(const std::vector<std::string>& contents) {
     return true;
 }
 
-bool PPSession::Accept(const SessionDescription* sdesc) {
+bool PPSession::Accept(const std::vector<std::string>& contents) {
     ASSERT(signaling_thread()->IsCurrent());
 
     // Only if just received initiate
@@ -96,15 +95,13 @@ bool PPSession::Accept(const SessionDescription* sdesc) {
         return false;
 
     // Setup for signaling.
-    set_local_description(sdesc);
+    set_local_description(new SessionDescription());
 
-    SessionError error;
-    if (!SendAcceptMessage(sdesc, &error)) {
-        LOG(LS_ERROR) << "Could not send accept message: " << error.text;
-        return false;
-    }
-    // TODO - Add BUNDLE support to transport-info messages.
-    MaybeEnableMuxingSupport();  // Enable transport channel mux if supported.
+    // TODO
+    PPMessage msg;  
+    msg.type = PPMSG_SESSION_ACCEPT;
+    SignalOutgoingMessage(this, msg);
+    
     SetState(Session::STATE_SENTACCEPT);
     return true;
 }
@@ -116,12 +113,6 @@ bool PPSession::Reject(const std::string& reason) {
     // request
     if (state() != STATE_RECEIVEDINITIATE && state() != STATE_RECEIVEDMODIFY)
         return false;
-
-    SessionError error;
-    if (!SendRejectMessage(reason, &error)) {
-        LOG(LS_ERROR) << "Could not send reject message: " << error.text;
-        return false;
-    }
 
     SetState(STATE_SENTREJECT);
     return true;
@@ -143,11 +134,9 @@ bool PPSession::TerminateWithReason(const std::string& reason) {
             break;
 
         default:
-            SessionError error;
-            if (!SendTerminateMessage(reason, &error)) {
-                LOG(LS_ERROR) << "Could not send terminate message: " << error.text;
-                return false;
-            }
+            PPMessage msg;
+            msg.type = PPMSG_SESSION_TERMINATE;
+            SignalOutgoingMessage(this, msg);
             break;
     }
 
@@ -160,17 +149,6 @@ bool PPSession::CreateTransportProxies(std::vector<P2PInfo>& p2pInfos) {
         GetOrCreateTransportProxy(p2pInfos[i].content_name);
     }
     return true;
-}
-
-TransportInfos PPSession::GetEmptyTransportInfos(
-        const ContentInfos& contents) const {
-    TransportInfos tinfos;
-    for (ContentInfos::const_iterator content = contents.begin();
-            content != contents.end(); ++content) {
-        tinfos.push_back(
-                TransportInfo(content->name, transport_type(), Candidates()));
-    }
-    return tinfos;
 }
 
 bool PPSession::CheckState(State expected) {
@@ -352,28 +330,6 @@ bool PPSession::OnTransportInfoMessage(const PPMessage& msg) {
         return false;
 
     return true;
-}
-
-
-bool PPSession::SendAcceptMessage(const SessionDescription* sdesc,
-        SessionError* error) {
-    //XmlElements elems;
-    //return SendMessage(ACTION_SESSION_ACCEPT, elems, error);
-    return true;      // FIXME
-}
-
-bool PPSession::SendRejectMessage(const std::string& reason,
-        SessionError* error) {
-    SessionTerminate term(reason);
-    //return SendMessage(ACTION_SESSION_REJECT, term, error);
-    return true;      // FIXME
-}
-
-bool PPSession::SendTerminateMessage(const std::string& reason,
-        SessionError* error) {
-    SessionTerminate term(reason);
-    //return SendMessage(ACTION_SESSION_TERMINATE, term, error);
-    return true;      // FIXME
 }
 
 bool PPSession::SendTransportInfoMessage(const TransportInfo& tinfo,

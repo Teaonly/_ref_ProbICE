@@ -13,7 +13,6 @@ class PPSession : public BaseSession {
 public:
     PPSession(const std::string& sid, 
               const std::string& content_type,
-              bool isInitialtor,
               talk_base::Thread* signal_thread,
               talk_base::Thread* worker_thread,
               PortAllocator* port_allocator);
@@ -30,8 +29,8 @@ public:
     void OnSignalingReady() { BaseSession::OnSignalingReady(); }
     void OnIncomingMessage(const PPMessage& msg);
     
-    bool Initiate(const std::vector<std::string> &contents);
-    bool Accept(const SessionDescription* sdesc);
+    bool Initiate(const std::vector<std::string>& contents);
+    bool Accept(const std::vector<std::string>& contents);
     bool Reject(const std::string& reason);
     bool Terminate() {
         return TerminateWithReason(STR_TERMINATE_SUCCESS);
@@ -41,7 +40,6 @@ public:
 private:
     // some inernal help functions
     bool CreateTransportProxies(std::vector<P2PInfo>& p2pInfos);
-    TransportInfos GetEmptyTransportInfos(const ContentInfos& contents) const; // Description to transportinfo
     bool CheckState(State state);
     void OnInitiateAcked();
     bool OnRemoteCandidates(const std::vector<P2PInfo>& p2pInfos);
@@ -55,9 +53,6 @@ private:
     virtual void OnTransportChannelGone(Transport* transport,
             const std::string& name);
 
-    bool SendAcceptMessage(const SessionDescription* sdesc, SessionError* error);
-    bool SendRejectMessage(const std::string& reason, SessionError* error);
-    bool SendTerminateMessage(const std::string& reason, SessionError* error);
     bool SendTransportInfoMessage(const TransportInfo& tinfo,
             SessionError* error);
     bool SendTransportInfoMessage(const TransportProxy* transproxy,
