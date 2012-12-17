@@ -39,10 +39,12 @@ public:
 
 private:
     // some inernal help functions
-    bool CreateTransportProxies(std::vector<P2PInfo>& p2pInfos);
     bool CheckState(State state);
-    void OnInitiateAcked();
+    bool CreateTransportProxies(std::vector<P2PInfo>& p2pInfos);
     bool OnRemoteCandidates(const std::vector<P2PInfo>& p2pInfos);
+    bool SendTransportInfoMessage(const TransportProxy* transproxy, const Candidates& candidates);
+    bool SendAllUnsentTransportInfoMessages();
+
 
     // transport callback
     virtual void OnTransportRequestSignaling(Transport* transport);
@@ -53,14 +55,7 @@ private:
     virtual void OnTransportChannelGone(Transport* transport,
             const std::string& name);
 
-    bool SendTransportInfoMessage(const TransportInfo& tinfo,
-            SessionError* error);
-    bool SendTransportInfoMessage(const TransportProxy* transproxy,
-            const Candidates& candidates,
-            SessionError* error);
-    bool SendAllUnsentTransportInfoMessages(SessionError* error);
-
-    // Handlers for the various types of messages.  These functions may take
+        // Handlers for the various types of messages.  These functions may take
     // pointers to the whole stanza or to just the session element.
     bool OnInitiateMessage(const PPMessage& msg);
     bool OnAcceptMessage(const PPMessage& msg);
@@ -69,7 +64,7 @@ private:
     bool OnTerminateMessage(const PPMessage& msg);
     bool OnTransportInfoMessage(const PPMessage& msg);
     
-    bool initiate_acked_;
+    bool pending_candidates_sent_;
 };
 
 #endif

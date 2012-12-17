@@ -12,7 +12,7 @@ PPSession::PPSession( const std::string& sid,
         worker_thread,
         port_allocator,
         sid, content_type, true) {
-    initiate_acked_ = false;
+    pending_candidates_sent_ = false;
 }
 
 PPSession::~PPSession() {
@@ -78,6 +78,7 @@ bool PPSession::Initiate(const std::vector<std::string>& contents) {
         return false;
     }
 
+    // TODO encoding message
     PPMessage msg;
     msg.type = PPMSG_SESSION_INITIATE;
     SignalOutgoingMessage(this, msg);
@@ -97,12 +98,14 @@ bool PPSession::Accept(const std::vector<std::string>& contents) {
     // Setup for signaling.
     set_local_description(new SessionDescription());
 
-    // TODO
+    // TODO encoding message
     PPMessage msg;  
     msg.type = PPMSG_SESSION_ACCEPT;
     SignalOutgoingMessage(this, msg);
     
     SetState(Session::STATE_SENTACCEPT);
+
+    SendAllUnsentTransportInfoMessages();
     return true;
 }
 
@@ -113,6 +116,11 @@ bool PPSession::Reject(const std::string& reason) {
     // request
     if (state() != STATE_RECEIVEDINITIATE && state() != STATE_RECEIVEDMODIFY)
         return false;
+    
+    // TODO encoding message 
+    PPMessage msg;
+    msg.type = PPMSG_SESSION_REJECT;
+    SignalOutgoingMessage(this, msg);
 
     SetState(STATE_SENTREJECT);
     return true;
@@ -134,6 +142,7 @@ bool PPSession::TerminateWithReason(const std::string& reason) {
             break;
 
         default:
+            // TODO encoding message
             PPMessage msg;
             msg.type = PPMSG_SESSION_TERMINATE;
             SignalOutgoingMessage(this, msg);
@@ -141,13 +150,6 @@ bool PPSession::TerminateWithReason(const std::string& reason) {
     }
 
     SetState(STATE_SENTTERMINATE);
-    return true;
-}
-
-bool PPSession::CreateTransportProxies(std::vector<P2PInfo>& p2pInfos) {
-    for (int i = 0; i < (int)p2pInfos.size(); i++) {
-        GetOrCreateTransportProxy(p2pInfos[i].content_name);
-    }
     return true;
 }
 
@@ -159,17 +161,13 @@ bool PPSession::CheckState(State expected) {
     return true;
 }
 
-void PPSession::OnInitiateAcked() {
-    // TODO: This is to work around server re-ordering
-    // messages.  We send the candidates once the session-initiate
-    // is acked.  Once we have fixed the server to guarantee message
-    // order, we can remove this case.
-    if (!initiate_acked_) {
-        initiate_acked_ = true;
-        SessionError error;
-        SendAllUnsentTransportInfoMessages(&error);
+bool PPSession::CreateTransportProxies(std::vector<P2PInfo>& p2pInfos) {
+    for (int i = 0; i < (int)p2pInfos.size(); i++) {
+        GetOrCreateTransportProxy(p2pInfos[i].content_name);
     }
+    return true;
 }
+
 
 bool PPSession::OnRemoteCandidates(const std::vector<P2PInfo>& p2pinfos) {
     for (int i = 0; i < (int)p2pinfos.size(); i++ ) {
@@ -233,20 +231,10 @@ void PPSession::OnTransportCandidatesReady(Transport* transport,
     ASSERT(signaling_thread()->IsCurrent());
     TransportProxy* transproxy = GetTransportProxy(transport);
     if (transproxy != NULL) {
-        if (initiator() && !initiate_acked_) {
-            // TODO: This is to work around server re-ordering
-            // messages.  We send the candidates once the session-initiate
-            // is acked.  Once we have fixed the server to guarantee message
-            // order, we can remove this case.
+        if (!pending_candidates_sent_) {
             transproxy->AddUnsentCandidates(candidates);
         } else {
-            if (!transproxy->negotiated()) {
-                transproxy->AddSentCandidates(candidates);
-            }
-            SessionError error;
-            if (!SendTransportInfoMessage(transproxy, candidates, &error)) {
-                LOG(LS_ERROR) << "Could not send transport info message: "
-                    << error.text;
+            if (!SendTransportInfoMessage(transproxy, candidates)) {
                 return;
             }
         }
@@ -287,7 +275,7 @@ bool PPSession::OnAcceptMessage(const PPMessage& msg) {
     std::vector<P2PInfo> p2pInfos;
     // TODO change msg to p2pInfos
 
-    OnInitiateAcked();
+    SendAllUnsentTransportInfoMessages();
 
     set_remote_description(new SessionDescription() );
     MaybeEnableMuxingSupport();  // Enable transport channel mux if supported.
@@ -332,30 +320,25 @@ bool PPSession::OnTransportInfoMessage(const PPMessage& msg) {
     return true;
 }
 
-bool PPSession::SendTransportInfoMessage(const TransportInfo& tinfo,
-        SessionError* error) {
-    //return SendMessage(ACTION_TRANSPORT_INFO, tinfo, error);
-    return true;      // FIXME
+bool PPSession::SendTransportInfoMessage(const TransportProxy* transproxy, const Candidates& candidates) {
+    // TODO encoding PPMessage
+    PPMessage msg;
+    msg.type = PPMSG_TRANSPORT_INFO;
+    SignalOutgoingMessage(this, msg);
+    return true;
 }
 
-bool PPSession::SendTransportInfoMessage(const TransportProxy* transproxy,
-        const Candidates& candidates,
-        SessionError* error) {
-    return SendTransportInfoMessage(TransportInfo(transproxy->content_name(),
-                transproxy->type(),
-                candidates),
-            error);
-}
-
-bool PPSession::SendAllUnsentTransportInfoMessages(SessionError* error) {
+bool PPSession::SendAllUnsentTransportInfoMessages() {
+    if (pending_candidates_sent_) {
+        return true;
+    }
+    
+    pending_candidates_sent_ = true;
     for (TransportMap::const_iterator iter = transport_proxies().begin();
             iter != transport_proxies().end(); ++iter) {
         TransportProxy* transproxy = iter->second;
         if (transproxy->unsent_candidates().size() > 0) {
-            if (!SendTransportInfoMessage(
-                        transproxy, transproxy->unsent_candidates(), error)) {
-                LOG(LS_ERROR) << "Could not send unsent transport info messages: "
-                    << error->text;
+            if (!SendTransportInfoMessage( transproxy, transproxy->unsent_candidates())) {
                 return false;
             }
             transproxy->ClearUnsentCandidates();
@@ -363,5 +346,4 @@ bool PPSession::SendAllUnsentTransportInfoMessages(SessionError* error) {
     }
     return true;
 }
-
 
