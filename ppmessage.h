@@ -17,12 +17,14 @@ class Candidate;
 }
 
 enum {
-    PPACTION_SESSION_INITIATE,
-    PPACTION_SESSION_ACCEPT,
-    PPACTION_SESSION_REJECT,
-    PPACTION_SESSION_TERMINATE,
-    PPACTION_SESSION_INFO,
-    PPACTION_TRANSPORT_INFO,
+    PPMSG_SESSION_INITIATE,
+    PPMSG_SESSION_ACCEPT,
+    PPMSG_SESSION_REJECT,
+    PPMSG_SESSION_TERMINATE,
+    PPMSG_SESSION_INFO,
+    PPMSG_TRANSPORT_INFO,
+    PPMSG_SESSION_ACK,
+    PPMSG_TRANSPORT_ACK,
 };
 
 class PPMessage {
@@ -39,7 +41,7 @@ public:
     std::vector<std::string> argvs; 
 };
 
-struct P2PInfo{
+struct P2PInfo {
     std::string content_name;
     std::vector<cricket::Candidate >  candidates_;    
 };
