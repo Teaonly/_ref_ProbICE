@@ -23,8 +23,6 @@ enum {
     PPMSG_SESSION_TERMINATE,
     PPMSG_SESSION_INFO,
     PPMSG_TRANSPORT_INFO,
-    PPMSG_SESSION_ACK,
-    PPMSG_TRANSPORT_ACK,
 };
 
 class PPMessage {
@@ -43,7 +41,7 @@ public:
 
 struct P2PInfo {
     std::string content_name;
-    std::vector<cricket::Candidate >  candidates_;    
+    std::vector<cricket::Candidate >  candidates_;
 };
 
 #endif

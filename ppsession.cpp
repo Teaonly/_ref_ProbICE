@@ -14,7 +14,7 @@ PPSession::PPSession( const std::string& sid,
         worker_thread,
         port_allocator,
         sid, content_type, isInitialtor) {
-    remote_ = remote;      
+    remote_ = remote; 
     initiate_acked_ = false;
 }
 
@@ -31,44 +31,33 @@ void PPSession::OnIncomingMessage(const PPMessage& msg) {
     ASSERT(state() == STATE_INIT || msg.from == remote_name());
 
     bool valid = false;
-    MessageError error;
     switch (msg.type) {
         case PPMSG_SESSION_INITIATE:
-            valid = OnInitiateMessage(msg, &error);
+            valid = OnInitiateMessage(msg);
             break;
         case PPMSG_SESSION_INFO:
             valid = OnInfoMessage(msg);
             break;
         case PPMSG_SESSION_ACCEPT:
-            valid = OnAcceptMessage(msg, &error);
+            valid = OnAcceptMessage(msg);
             break;
         case PPMSG_SESSION_REJECT:
-            valid = OnRejectMessage(msg, &error);
+            valid = OnRejectMessage(msg);
             break;
         case PPMSG_SESSION_TERMINATE:
-            valid = OnTerminateMessage(msg, &error);
+            valid = OnTerminateMessage(msg);
             break;
         case PPMSG_TRANSPORT_INFO:
-            valid = OnTransportInfoMessage(msg, &error);
-            break;
-
-        case PPMSG_TRANSPORT_ACK:
-        case PPMSG_SESSION_ACK:
+            valid = OnTransportInfoMessage(msg);
             break;
 
         default:
-            error.SetType(buzz::QN_STANZA_BAD_REQUEST);
-            error.SetText("unknown session message type");
             valid = false;
     }
 
-    if (valid) {
-        //SendAcknowledgementMessage(msg.stanza);   //FIXME
-        SendAcknowledgementMessage(NULL);
-    } else {
+    if (!valid) {
         SignalErrorMessage(this, msg);  
     }
-
 }
 
 bool PPSession::Initiate(const SessionDescription* sdesc) {
@@ -82,8 +71,9 @@ bool PPSession::Initiate(const SessionDescription* sdesc) {
     // Setup for signaling.
     set_local_description(sdesc);
     std::vector<P2PInfo> p2pInfos;
-    // FIXME convert from SessionDescription to P2PInfos
-    if( !CreateTransportProxies(p2pInfos, &error)) {
+    // TODO convert from SessionDescription to P2PInfo
+
+    if( !CreateTransportProxies(p2pInfos)) {
         LOG(LS_ERROR) << "Could not create transports: " << error.text;
         return false;
     }
@@ -167,11 +157,10 @@ bool PPSession::TerminateWithReason(const std::string& reason) {
     return true;
 }
 
-bool PPSession::CreateTransportProxies(std::vector<P2PInfo>& p2pInfos, SessionError* error) {
+bool PPSession::CreateTransportProxies(std::vector<P2PInfo>& p2pInfos) {
     for (int i = 0; i < (int)p2pInfos.size(); i++) {
         GetOrCreateTransportProxy(p2pInfos[i].content_name);
     }
-
     return true;
 }
 
@@ -186,11 +175,9 @@ TransportInfos PPSession::GetEmptyTransportInfos(
     return tinfos;
 }
 
-bool PPSession::CheckState(State expected, MessageError* error) {
+bool PPSession::CheckState(State expected) {
     ASSERT(state() == expected);
     if (state() != expected) {
-        error->SetType(buzz::QN_STANZA_NOT_ALLOWED);
-        error->SetText("message not allowed in current state");
         return false;
     }
     return true;
@@ -208,35 +195,30 @@ void PPSession::OnInitiateAcked() {
     }
 }
 
-bool PPSession::OnRemoteCandidates(
-        const TransportInfos& tinfos, ParseError* error) {
-    for (TransportInfos::const_iterator tinfo = tinfos.begin();
-            tinfo != tinfos.end(); ++tinfo) {
+bool PPSession::OnRemoteCandidates(const std::vector<P2PInfo>& p2pinfos) {
+    for (int i = 0; i < (int)p2pinfos.size(); i++ ) {
+        const P2PInfo *tinfo = &p2pinfos[i];
+
         TransportProxy* transproxy = GetTransportProxy(tinfo->content_name);
         if (transproxy == NULL) {
-            return BadParse("Unknown content name: " + tinfo->content_name, error);
+            return false;
         }
 
         // Must complete negotiation before sending remote candidates, or
         // there won't be any channel impls.
         transproxy->CompleteNegotiation();
-        for (Candidates::const_iterator cand = tinfo->candidates.begin();
-                cand != tinfo->candidates.end(); ++cand) {
-            if (!transproxy->impl()->VerifyCandidate(*cand, error))
+        for (Candidates::const_iterator cand = tinfo->candidates_.begin();
+                cand != tinfo->candidates_.end(); ++cand) {
+            
+            ParseError err;
+            if (!transproxy->impl()->VerifyCandidate(*cand, &err))
                 return false;
 
             if (!transproxy->impl()->HasChannel(cand->name())) {
-                buzz::XmlElement* extra_info =
-                    new buzz::XmlElement(QN_GINGLE_P2P_UNKNOWN_CHANNEL_NAME);
-                extra_info->AddAttr(buzz::QN_NAME, cand->name());
-                error->extra = extra_info;
-
-                return BadParse("channel named in candidate does not exist: " +
-                        cand->name() + " for content: "+ tinfo->content_name,
-                        error);
+                return false;
             }
         }
-        transproxy->impl()->OnRemoteCandidates(tinfo->candidates);
+        transproxy->impl()->OnRemoteCandidates(tinfo->candidates_);
     }
 
     return true;
@@ -295,68 +277,57 @@ void PPSession::OnTransportCandidatesReady(Transport* transport,
     }
 }
 
-void PPSession::OnTransportChannelGone(Transport* transport,
-        const std::string& name) {
+void PPSession::OnTransportChannelGone(Transport* transport, const std::string& name) {
     ASSERT(signaling_thread()->IsCurrent());
     SignalChannelGone(this, name);
 }
 
-
-bool PPSession::OnInitiateMessage(const PPMessage& msg, MessageError* error) {
-    if (!CheckState(STATE_INIT, error))
+bool PPSession::OnInitiateMessage(const PPMessage& msg) {
+    if (!CheckState(STATE_INIT))
         return false;
 
-    SessionError session_error;
     std::vector<P2PInfo> p2pInfos;
+    // TODO change msg to p2pInfos
 
-    if (!CreateTransportProxies(p2pInfos, &session_error)) {
-        error->SetType(buzz::QN_STANZA_NOT_ACCEPTABLE);
-        error->SetText(session_error.text);
+    if (!CreateTransportProxies(p2pInfos)) {
         return false;
     }
-
-    // FIXME TODO  
-    //set_remote_description(new SessionDescription(init.ClearContents(),
-    //                                              init.groups));
+    set_remote_description( new SessionDescription() );     //FXME empty description??
 
     SetState(STATE_RECEIVEDINITIATE);
 
     // Users of Session may listen to state change and call Reject().
     if (state() != STATE_SENTREJECT) {
-        // FIXME TODO TODO TODO
-        //if (!OnRemoteCandidates(init.transports, error))
-        //  return false;
+        if (!OnRemoteCandidates(p2pInfos))
+            return false;
     }
     return true;
 }
 
-bool PPSession::OnAcceptMessage(const PPMessage& msg, MessageError* error) {
-    if (!CheckState(STATE_SENTINITIATE, error))
+bool PPSession::OnAcceptMessage(const PPMessage& msg) {
+    if (!CheckState(STATE_SENTINITIATE))
         return false;
 
-    SessionAccept accept;
-    // msg ==> accept FIXME
+    std::vector<P2PInfo> p2pInfos;
+    // TODO change msg to p2pInfos
 
-    // If we get an accept, we can assume the initiate has been
-    // received, even if we haven't gotten an IQ response.
     OnInitiateAcked();
 
-    set_remote_description(new SessionDescription(accept.ClearContents(),
-                accept.groups));
+    set_remote_description(new SessionDescription() );
     MaybeEnableMuxingSupport();  // Enable transport channel mux if supported.
     SetState(STATE_RECEIVEDACCEPT);
 
     // Users of Session may listen to state change and call Reject().
     if (state() != STATE_SENTREJECT) {
-        if (!OnRemoteCandidates(accept.transports, error))
+        if (!OnRemoteCandidates(p2pInfos))
             return false;
     }
 
     return true;
 }
 
-bool PPSession::OnRejectMessage(const PPMessage& msg, MessageError* error) {
-    if (!CheckState(STATE_SENTINITIATE, error))
+bool PPSession::OnRejectMessage(const PPMessage& msg) {
+    if (!CheckState(STATE_SENTINITIATE))
         return false;
 
     SetState(STATE_RECEIVEDREJECT);
@@ -364,35 +335,26 @@ bool PPSession::OnRejectMessage(const PPMessage& msg, MessageError* error) {
 }
 
 bool PPSession::OnInfoMessage(const PPMessage& msg) {
-    //SignalInfoMessage(this, msg.action_elem);
+    SignalInfoMessage(this, msg.argvs[0]);
     return true;
 }
 
-bool PPSession::OnTerminateMessage(const PPMessage& msg,
-        MessageError* error) {
-    SessionTerminate term;
-    // msg ==> term FIXME
-
-    SignalReceivedTerminateReason(this, term.reason);
-    if (term.debug_reason != buzz::STR_EMPTY) {
-        LOG(LS_VERBOSE) << "Received error on call: " << term.debug_reason;
-    }
-
+bool PPSession::OnTerminateMessage(const PPMessage& msg) {
+    SignalReceivedTerminateReason(this, msg.argvs[0]);
+    
     SetState(STATE_RECEIVEDTERMINATE);
     return true;
 }
 
-bool PPSession::OnTransportInfoMessage(const PPMessage& msg,
-        MessageError* error) {
-    TransportInfos tinfos;
-    // msg ==> tinfos  FIXME  
+bool PPSession::OnTransportInfoMessage(const PPMessage& msg) {
+    std::vector<P2PInfo> p2pInfos;
+    // TODO change msg to tinfos; 
 
-    if (!OnRemoteCandidates(tinfos, error))
+    if (!OnRemoteCandidates(p2pInfos))
         return false;
 
     return true;
 }
-
 
 
 bool PPSession::SendInitiateMessage(const SessionDescription* sdesc,
@@ -471,13 +433,4 @@ bool PPSession::SendMessage(ActionType type, const XmlElements& action_elems,
     return true;
 }
 
-void PPSession::SendAcknowledgementMessage(const buzz::XmlElement* stanza) {
-    talk_base::scoped_ptr<buzz::XmlElement> ack(
-            new buzz::XmlElement(buzz::QN_IQ));
-    //ack->SetAttr(buzz::QN_TO, remote_name());
-    ack->SetAttr(buzz::QN_ID, stanza->Attr(buzz::QN_ID));
-    ack->SetAttr(buzz::QN_TYPE, "result");
-
-    SignalOutgoingMessage(this, ack.get());
-}
 

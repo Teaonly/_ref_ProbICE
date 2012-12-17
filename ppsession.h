@@ -24,7 +24,7 @@ public:
     sigslot::signal2<PPSession* , const buzz::XmlElement*> SignalOutgoingMessage;
     sigslot::signal2<PPSession*, const std::string&> SignalReceivedTerminateReason;
     sigslot::signal2<PPSession*, const std::string&> SignalChannelGone;     // Invoked when we notice that there is no matching channel on our peer.
-    sigslot::signal2<PPSession*, const buzz::XmlElement*> SignalInfoMessage;
+    sigslot::signal2<PPSession*, const std::string&> SignalInfoMessage;
     sigslot::signal2<PPSession*, const PPMessage&> SignalErrorMessage;
 
     virtual void OnMessage(talk_base::Message *pmsg);
@@ -42,12 +42,11 @@ public:
 
 private:
     // some inernal help functions
-    bool CreateTransportProxies(std::vector<P2PInfo>& p2pInfos, SessionError* error);
+    bool CreateTransportProxies(std::vector<P2PInfo>& p2pInfos);
     TransportInfos GetEmptyTransportInfos(const ContentInfos& contents) const; // Description to transportinfo
-    bool CheckState(State state, MessageError* error);
+    bool CheckState(State state);
     void OnInitiateAcked();
-    bool OnRemoteCandidates(const TransportInfos& tinfos,
-            ParseError* error);
+    bool OnRemoteCandidates(const std::vector<P2PInfo>& p2pInfos);
 
     // transport callback
     virtual void OnTransportRequestSignaling(Transport* transport);
@@ -72,16 +71,15 @@ private:
     bool SendAllUnsentTransportInfoMessages(SessionError* error);
     bool SendMessage(ActionType type, const XmlElements& action_elems,
             SessionError* error);
-    void SendAcknowledgementMessage(const buzz::XmlElement* stanza);
 
     // Handlers for the various types of messages.  These functions may take
     // pointers to the whole stanza or to just the session element.
-    bool OnInitiateMessage(const PPMessage& msg, MessageError* error);
-    bool OnAcceptMessage(const PPMessage& msg, MessageError* error);
-    bool OnRejectMessage(const PPMessage& msg, MessageError* error);
+    bool OnInitiateMessage(const PPMessage& msg);
+    bool OnAcceptMessage(const PPMessage& msg);
+    bool OnRejectMessage(const PPMessage& msg);
     bool OnInfoMessage(const PPMessage& msg);
-    bool OnTerminateMessage(const PPMessage& msg, MessageError* error);
-    bool OnTransportInfoMessage(const PPMessage& msg, MessageError* error);
+    bool OnTerminateMessage(const PPMessage& msg);
+    bool OnTransportInfoMessage(const PPMessage& msg);
     
     std::string remote_;
     bool initiate_acked_;
