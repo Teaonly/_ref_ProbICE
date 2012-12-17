@@ -12,7 +12,7 @@ PPSession::PPSession( const std::string& sid,
         worker_thread,
         port_allocator,
         sid, content_type, true) {
-    pending_candidates_sent_ = false;
+    pending_candidates_ = false;
 }
 
 PPSession::~PPSession() {
@@ -82,7 +82,8 @@ bool PPSession::Initiate(const std::vector<std::string>& contents) {
     PPMessage msg;
     msg.type = PPMSG_SESSION_INITIATE;
     SignalOutgoingMessage(this, msg);
-
+    
+    
     SetState(Session::STATE_SENTINITIATE);
     SpeculativelyConnectAllTransportChannels();
     return true;
@@ -162,6 +163,7 @@ bool PPSession::CheckState(State expected) {
 }
 
 bool PPSession::CreateTransportProxies(std::vector<P2PInfo>& p2pInfos) {
+    pending_candidates_ = true;
     for (int i = 0; i < (int)p2pInfos.size(); i++) {
         GetOrCreateTransportProxy(p2pInfos[i].content_name);
     }
@@ -231,7 +233,7 @@ void PPSession::OnTransportCandidatesReady(Transport* transport,
     ASSERT(signaling_thread()->IsCurrent());
     TransportProxy* transproxy = GetTransportProxy(transport);
     if (transproxy != NULL) {
-        if (!pending_candidates_sent_) {
+        if (pending_candidates_) {
             transproxy->AddUnsentCandidates(candidates);
         } else {
             if (!SendTransportInfoMessage(transproxy, candidates)) {
@@ -329,11 +331,7 @@ bool PPSession::SendTransportInfoMessage(const TransportProxy* transproxy, const
 }
 
 bool PPSession::SendAllUnsentTransportInfoMessages() {
-    if (pending_candidates_sent_) {
-        return true;
-    }
-    
-    pending_candidates_sent_ = true;
+    pending_candidates_ = false;
     for (TransportMap::const_iterator iter = transport_proxies().begin();
             iter != transport_proxies().end(); ++iter) {
         TransportProxy* transproxy = iter->second;

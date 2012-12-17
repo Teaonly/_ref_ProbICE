@@ -64,7 +64,7 @@ private:
     bool OnTerminateMessage(const PPMessage& msg);
     bool OnTransportInfoMessage(const PPMessage& msg);
     
-    bool pending_candidates_sent_;
+    bool pending_candidates_;
 };
 
 #endif
