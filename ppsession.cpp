@@ -5,7 +5,6 @@ using namespace cricket;
 
 PPSession::PPSession( const std::string& sid,
         const std::string& content_type,
-        const std::string& remote,
         bool isInitialtor,
         talk_base::Thread* signal_thread,
         talk_base::Thread* worker_thread,
@@ -14,7 +13,6 @@ PPSession::PPSession( const std::string& sid,
         worker_thread,
         port_allocator,
         sid, content_type, isInitialtor) {
-    remote_ = remote; 
     initiate_acked_ = false;
 }
 
@@ -28,7 +26,7 @@ void PPSession::OnMessage(talk_base::Message *pmsg) {
 
 void PPSession::OnIncomingMessage(const PPMessage& msg) {
     ASSERT(signaling_thread()->IsCurrent());
-    ASSERT(state() == STATE_INIT || msg.from == remote_name());
+    ASSERT(state() == STATE_INIT);
 
     bool valid = false;
     switch (msg.type) {
@@ -60,7 +58,7 @@ void PPSession::OnIncomingMessage(const PPMessage& msg) {
     }
 }
 
-bool PPSession::Initiate(const SessionDescription* sdesc) {
+bool PPSession::Initiate(const std::vector<std::string>& contents) {
     ASSERT(signaling_thread()->IsCurrent());
     SessionError error;
 
@@ -68,26 +66,26 @@ bool PPSession::Initiate(const SessionDescription* sdesc) {
     if (state() != STATE_INIT)
         return false;
 
-    // Setup for signaling.
-    set_local_description(sdesc);
+    set_local_description(new SessionDescription());
+    
     std::vector<P2PInfo> p2pInfos;
-    // TODO convert from SessionDescription to P2PInfo
+    for(int i = 0; i < (int)contents.size(); i++) {
+        P2PInfo p2pInfo;
+        p2pInfo.content_name = contents[i];
+        p2pInfos.push_back(p2pInfo);
+    }
 
     if( !CreateTransportProxies(p2pInfos)) {
-        LOG(LS_ERROR) << "Could not create transports: " << error.text;
         return false;
     }
 
-    if (!SendInitiateMessage(sdesc, &error)) {
-        LOG(LS_ERROR) << "Could not send initiate message: " << error.text;
-        return false;
-    }
+    PPMessage msg;
+    msg.type = PPMSG_SESSION_INITIATE;
+    SignalOutgoingMessage(this, msg);
 
     SetState(Session::STATE_SENTINITIATE);
-
     SpeculativelyConnectAllTransportChannels();
     return true;
-
 }
 
 bool PPSession::Accept(const SessionDescription* sdesc) {
@@ -357,16 +355,6 @@ bool PPSession::OnTransportInfoMessage(const PPMessage& msg) {
 }
 
 
-bool PPSession::SendInitiateMessage(const SessionDescription* sdesc,
-        SessionError* error) {
-    SessionInitiate init;
-    init.contents = sdesc->contents();
-    init.transports = GetEmptyTransportInfos(init.contents);
-    init.groups = sdesc->groups();
-    //return SendMessage(ACTION_SESSION_INITIATE, init, error);
-    return true;     // FIXME
-}
-
 bool PPSession::SendAcceptMessage(const SessionDescription* sdesc,
         SessionError* error) {
     //XmlElements elems;
@@ -417,19 +405,6 @@ bool PPSession::SendAllUnsentTransportInfoMessages(SessionError* error) {
             transproxy->ClearUnsentCandidates();
         }
     }
-    return true;
-}
-
-bool PPSession::SendMessage(ActionType type, const XmlElements& action_elems,
-        SessionError* error) {
-    talk_base::scoped_ptr<buzz::XmlElement> stanza(
-            new buzz::XmlElement(buzz::QN_IQ));
-
-    //PPMessage msg(current_protocol_, type, id(), initiator_name());
-    //msg.to = remote_name();
-    //WritePPMessage(msg, action_elems, stanza.get());
-
-    SignalOutgoingMessage(this, stanza.get());
     return true;
 }
 

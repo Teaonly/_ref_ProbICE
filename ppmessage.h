@@ -29,13 +29,12 @@ class PPMessage {
 public:
     PPMessage() {
         argvs.clear();
+        id = 0;
     }
     ~PPMessage() {
     }
     unsigned int id;
     unsigned int type;
-    std::string from;
-    std::string to;
     std::vector<std::string> argvs; 
 };
 

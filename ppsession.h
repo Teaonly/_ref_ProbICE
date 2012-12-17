@@ -13,7 +13,6 @@ class PPSession : public BaseSession {
 public:
     PPSession(const std::string& sid, 
               const std::string& content_type,
-              const std::string& remote, 
               bool isInitialtor,
               talk_base::Thread* signal_thread,
               talk_base::Thread* worker_thread,
@@ -21,18 +20,17 @@ public:
     ~PPSession();
 
     sigslot::signal1<PPSession*> SignalRequestSignaling;
-    sigslot::signal2<PPSession* , const buzz::XmlElement*> SignalOutgoingMessage;
+    sigslot::signal2<PPSession* , const PPMessage&> SignalOutgoingMessage;
     sigslot::signal2<PPSession*, const std::string&> SignalReceivedTerminateReason;
-    sigslot::signal2<PPSession*, const std::string&> SignalChannelGone;     // Invoked when we notice that there is no matching channel on our peer.
+    sigslot::signal2<PPSession*, const std::string&> SignalChannelGone;
     sigslot::signal2<PPSession*, const std::string&> SignalInfoMessage;
     sigslot::signal2<PPSession*, const PPMessage&> SignalErrorMessage;
 
     virtual void OnMessage(talk_base::Message *pmsg);
-    std::string remote_name() {return remote_;}
     void OnSignalingReady() { BaseSession::OnSignalingReady(); }
     void OnIncomingMessage(const PPMessage& msg);
     
-    bool Initiate(const SessionDescription* sdesc);
+    bool Initiate(const std::vector<std::string> &contents);
     bool Accept(const SessionDescription* sdesc);
     bool Reject(const std::string& reason);
     bool Terminate() {
@@ -57,9 +55,6 @@ private:
     virtual void OnTransportChannelGone(Transport* transport,
             const std::string& name);
 
-    // Send various kinds of session messages.
-    bool SendInitiateMessage(const SessionDescription* sdesc,
-            SessionError* error);
     bool SendAcceptMessage(const SessionDescription* sdesc, SessionError* error);
     bool SendRejectMessage(const std::string& reason, SessionError* error);
     bool SendTerminateMessage(const std::string& reason, SessionError* error);
@@ -69,8 +64,6 @@ private:
             const Candidates& candidates,
             SessionError* error);
     bool SendAllUnsentTransportInfoMessages(SessionError* error);
-    bool SendMessage(ActionType type, const XmlElements& action_elems,
-            SessionError* error);
 
     // Handlers for the various types of messages.  These functions may take
     // pointers to the whole stanza or to just the session element.
@@ -81,7 +74,6 @@ private:
     bool OnTerminateMessage(const PPMessage& msg);
     bool OnTransportInfoMessage(const PPMessage& msg);
     
-    std::string remote_;
     bool initiate_acked_;
 };
 
