@@ -13,7 +13,7 @@ namespace talk_base{
 
 class Peer : public sigslot::has_slots<>, public talk_base::MessageHandler {  
 public:
-    Peer(const std::string &server, const unsigned short port, const std::string &id);
+    Peer(const std::string &server, const unsigned short port, const std::string &id, talk_base::Thread *worker_thread);
     ~Peer(); 
     
     virtual void OnMessage(talk_base::Message *msg);

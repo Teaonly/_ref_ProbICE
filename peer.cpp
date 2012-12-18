@@ -6,15 +6,14 @@
 
 #define _DEBUG_ 1
 
-Peer::Peer(const std::string &server, const unsigned short port, const std::string &id) {
+Peer::Peer(const std::string &server, const unsigned short port, const std::string &id, talk_base::Thread *worker_thread) {
     server_address_ = server;
     server_port_ = port;
     id_ = id;
     isOnline_ = true;
     sock_ = NULL;
 
-    worker_thread_ = new talk_base::Thread();
-    worker_thread_->Start();
+    worker_thread_ = worker_thread;
 }
 
 Peer::~Peer() {
@@ -22,8 +21,6 @@ Peer::~Peer() {
         sock_->Close();
         delete sock_;
     }
-    worker_thread_->Stop();
-    delete worker_thread_;
 }
 
 void Peer::OnMessage(talk_base::Message *msg) { 
