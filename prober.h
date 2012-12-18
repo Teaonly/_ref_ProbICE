@@ -12,6 +12,7 @@ class HttpPortAllocator;
 namespace talk_base { 
 class BasicNetworkManager;
 }
+class PPMessage;
 class PPSession;
 class Peer;
 
@@ -29,12 +30,18 @@ public:
     void Run();
 
 protected:
+    // call back from peer
     void onOnLine(bool isOk);
     void onOffline();
     void onRemoteOnline(const std::string &);
     void onRemoteOffline(const std::string &);
     void onRemoteMessage(const std::string &, const std::string &);
-    
+
+    // call back from PPSession
+    void onSignalRequest(PPSession *);
+    void onOutgoingMessage(PPSession *, const PPMessage&);
+    void onStateChanged(PPSession *);
+
     //internal helper functions
     void createSession_s();
 

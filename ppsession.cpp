@@ -13,6 +13,7 @@ PPSession::PPSession( const std::string& sid,
         port_allocator,
         sid, content_type, true) {
     pending_candidates_ = false;
+    SignalState.connect(this, &PPSession::onStateChanged);
 }
 
 PPSession::~PPSession() {
@@ -57,7 +58,7 @@ void PPSession::OnIncomingMessage(const PPMessage& msg) {
     }
 }
 
-bool PPSession::Initiate(const std::vector<std::string>& contents) {
+bool PPSession::Initiate(const std::string content) {
     ASSERT(signaling_thread()->IsCurrent());
     SessionError error;
 
@@ -68,11 +69,9 @@ bool PPSession::Initiate(const std::vector<std::string>& contents) {
     set_local_description(new SessionDescription());
     
     std::vector<P2PInfo> p2pInfos;
-    for(int i = 0; i < (int)contents.size(); i++) {
-        P2PInfo p2pInfo;
-        p2pInfo.content_name = contents[i];
-        p2pInfos.push_back(p2pInfo);
-    }
+    P2PInfo p2pInfo;
+    p2pInfo.content_name = content;
+    p2pInfos.push_back(p2pInfo);
 
     if( !CreateTransportProxies(p2pInfos)) {
         return false;
@@ -83,13 +82,12 @@ bool PPSession::Initiate(const std::vector<std::string>& contents) {
     msg.type = PPMSG_SESSION_INITIATE;
     SignalOutgoingMessage(this, msg);
     
-    
     SetState(Session::STATE_SENTINITIATE);
     SpeculativelyConnectAllTransportChannels();
     return true;
 }
 
-bool PPSession::Accept(const std::vector<std::string>& contents) {
+bool PPSession::Accept(const std::string content) {
     ASSERT(signaling_thread()->IsCurrent());
 
     // Only if just received initiate
@@ -345,3 +343,6 @@ bool PPSession::SendAllUnsentTransportInfoMessages() {
     return true;
 }
 
+void PPSession::onStateChanged(BaseSession* session, BaseSession::State newState) {
+    SignalStateChanged(this);
+}

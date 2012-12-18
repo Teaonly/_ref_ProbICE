@@ -28,7 +28,6 @@ IceProber::~IceProber() {
         delete session_;
         session_ = NULL;
     }
-    
     if ( network_manager_ ) {
         delete network_manager_;
         network_manager_ = NULL;
@@ -42,7 +41,6 @@ IceProber::~IceProber() {
         signal_thread_->Stop();
         delete signal_thread_;
     }        
-    
     if ( worker_thread_ ) {
         worker_thread_->Stop();
         delete worker_thread_;
@@ -87,7 +85,24 @@ void IceProber::OnMessage(talk_base::Message *msg) {
 
 void IceProber::createSession_s() {
     session_ = new PPSession("iceprober", "raw", signal_thread_, worker_thread_, port_allocator_);
-    
+    session_->SignalRequestSignaling.connect(this, &IceProber::onSignalRequest);
+    session_->SignalOutgoingMessage.connect(this, &IceProber::onOutgoingMessage);
+    session_->SignalStateChanged.connect(this, &IceProber::onStateChanged);
+
+    session_->Initiate("data");
+    session_->CreateChannel("data", "test");
+}
+
+void IceProber::onSignalRequest(PPSession *session) {
+    std::cout << "On IceProber::onSignalRequest" << std::endl;
+    session_->OnSignalingReady();
+}
+
+void IceProber::onOutgoingMessage(PPSession *session, const PPMessage& msg) {
+    std::cout << "On IceProber::onOutgoingMessage " << std::endl;
+}
+
+void IceProber::onStateChanged(PPSession *session) {
 }
 
 void IceProber::onOnLine(bool isOk) {
@@ -106,12 +121,11 @@ void IceProber::onRemoteOnline(const std::string &remote) {
     std::cout << "Remote (" << remote << ") is online" << std::endl;
 }
 
-void IceProber::onRemoteOffline(const std::string &remote){
+void IceProber::onRemoteOffline(const std::string &remote) {
     std::cout << "Remote (" << remote << ") is offline" << std::endl;
 }
 
 void IceProber::onRemoteMessage(const std::string &remote, const std::string &msg) {
     std::cout << "Remote (" << remote << ") say to me: " << msg << std::endl;
 }
-
 

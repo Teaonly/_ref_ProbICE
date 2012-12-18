@@ -133,11 +133,12 @@ void Peer::processXML() {
             SignalRemoteOnline(words[1]);
         } else if ( words[0] == "offline" ) {
             SignalRemoteOffline(words[1]);
+        } else if ( words[0] == "login" ) {
+            SignalRemoteLogin(words[1]);
         } else if ( words[0] == "message" ) {
             SignalRemoteMessage(words[1], words[2]);
         }
     }
 
 }
-
 

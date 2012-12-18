@@ -22,6 +22,7 @@ public:
     sigslot::signal1<bool> SignalOnline;
     sigslot::signal0<> SignalOffline;
     sigslot::signal1<const std::string &> SignalRemoteOnline;
+    sigslot::signal1<const std::string &> SignalRemoteLogin;
     sigslot::signal1<const std::string &> SignalRemoteOffline;
     sigslot::signal2<const std::string &, const std::string &> SignalRemoteMessage;
     

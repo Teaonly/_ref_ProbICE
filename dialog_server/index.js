@@ -41,7 +41,7 @@ PeerServer.processDialog = function(peer) {
         }     
        
         //tell to all the others 
-        var xml = "<online:" + peer.pid + ">";
+        var xml = "<login:" + peer.pid + ">";
         for(var p in peerObjects) {
             peerObjects[p].sock.write(xml);
         } 

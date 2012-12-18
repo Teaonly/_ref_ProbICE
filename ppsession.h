@@ -24,13 +24,14 @@ public:
     sigslot::signal2<PPSession*, const std::string&> SignalChannelGone;
     sigslot::signal2<PPSession*, const std::string&> SignalInfoMessage;
     sigslot::signal2<PPSession*, const PPMessage&> SignalErrorMessage;
+    sigslot::signal1<PPSession*> SignalStateChanged;
 
     virtual void OnMessage(talk_base::Message *pmsg);
     void OnSignalingReady() { BaseSession::OnSignalingReady(); }
     void OnIncomingMessage(const PPMessage& msg);
     
-    bool Initiate(const std::vector<std::string>& contents);
-    bool Accept(const std::vector<std::string>& contents);
+    bool Initiate(const std::string content);
+    bool Accept(const std::string content);
     bool Reject(const std::string& reason);
     bool Terminate() {
         return TerminateWithReason(STR_TERMINATE_SUCCESS);
@@ -44,7 +45,7 @@ private:
     bool OnRemoteCandidates(const std::vector<P2PInfo>& p2pInfos);
     bool SendTransportInfoMessage(const TransportProxy* transproxy, const Candidates& candidates);
     bool SendAllUnsentTransportInfoMessages();
-
+    void onStateChanged(BaseSession*, BaseSession::State newState);
 
     // transport callback
     virtual void OnTransportRequestSignaling(Transport* transport);
