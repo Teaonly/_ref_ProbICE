@@ -1,5 +1,5 @@
 #include <iostream>
-#include "talk/p2p/client/httpportallocator.h"
+#include "talk/p2p/client/basicportallocator.h"
 #include "talk/base/network.h"
 #include "prober.h"
 #include "ppsession.h"
@@ -55,7 +55,7 @@ void IceProber::Login(const std::string &server,
     remote_name_ = remoteName;
 
     network_manager_ = new talk_base::BasicNetworkManager();
-    port_allocator_ = new  cricket::HttpPortAllocator(network_manager_, "iceprober-agent");
+    port_allocator_ = new  cricket::BasicPortAllocator(network_manager_);
 
     peer_ =  new Peer(server, 1979, my_name_, worker_thread_);
     peer_->SignalOnline.connect(this, &IceProber::onOnLine);

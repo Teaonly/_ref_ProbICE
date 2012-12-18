@@ -4,10 +4,9 @@
 #include "talk/base/thread.h"
 #include "talk/base/messagequeue.h"
 
-
 // predefined classes 
 namespace cricket {
-class HttpPortAllocator;
+class BasicPortAllocator;
 }
 namespace talk_base { 
 class BasicNetworkManager;
@@ -55,7 +54,7 @@ private:
     talk_base::Thread *worker_thread_;    
     
     talk_base::BasicNetworkManager *network_manager_;
-    cricket::HttpPortAllocator *port_allocator_;
+    cricket::BasicPortAllocator *port_allocator_;
 };
 
 #endif
