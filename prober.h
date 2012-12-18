@@ -34,6 +34,9 @@ protected:
     void onRemoteOnline(const std::string &);
     void onRemoteOffline(const std::string &);
     void onRemoteMessage(const std::string &, const std::string &);
+    
+    //internal helper functions
+    void createSession_s();
 
 private:
     PPSession *session_;

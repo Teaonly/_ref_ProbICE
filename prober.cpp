@@ -5,6 +5,10 @@
 #include "ppsession.h"
 #include "peer.h"
 
+enum {
+    MSG_CREATE_SESSION,
+};
+
 IceProber::IceProber() {
     worker_thread_ = new talk_base::Thread();
     worker_thread_->Start();
@@ -63,11 +67,27 @@ void IceProber::Login(const std::string &server,
     peer_->SignalRemoteMessage.connect(this, &IceProber::onRemoteMessage);
     peer_->Start();
     
+    signal_thread_->Post(this, MSG_CREATE_SESSION);
+
 }
 
 void IceProber::Run() {
     talk_base::Thread* main_thread = talk_base::Thread::Current();
     main_thread->Run();
+}
+
+void IceProber::OnMessage(talk_base::Message *msg) { 
+    switch (msg->message_id) {
+        case MSG_CREATE_SESSION:
+            createSession_s();
+            break;
+    }
+
+}
+
+void IceProber::createSession_s() {
+    session_ = new PPSession("iceprober", "raw", signal_thread_, worker_thread_, port_allocator_);
+    
 }
 
 void IceProber::onOnLine(bool isOk) {
@@ -94,6 +114,4 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::string &ms
     std::cout << "Remote (" << remote << ") say to me: " << msg << std::endl;
 }
 
-void IceProber::OnMessage(talk_base::Message *msg) { 
-}
 
