@@ -85,8 +85,12 @@ void Peer::onCloseEvent(talk_base::AsyncSocket* socket, int err) {
     std::cout << "Dectected socket is closed by server or can't connect to server" << std::endl;
 #endif
 
+    sock_->SignalConnectEvent.disconnect(this);
+    sock_->SignalReadEvent.disconnect(this);
+    sock_->SignalCloseEvent.disconnect(this); 
+    
     sock_->Close();
-    delete sock_;
+    //delete sock_;         //FIXME , we can't delete the socket in the self's callback
     sock_ = NULL;
 
     if ( isOnline_ == true) {
