@@ -89,8 +89,8 @@ void IceProber::createSession_s() {
     session_->SignalOutgoingMessage.connect(this, &IceProber::onOutgoingMessage);
     session_->SignalStateChanged.connect(this, &IceProber::onStateChanged);
 
-    session_->Initiate("data");
     session_->CreateChannel("data", "test");
+    session_->Initiate("data");
 }
 
 void IceProber::onSignalRequest(PPSession *session) {
