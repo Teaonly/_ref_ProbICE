@@ -24,7 +24,7 @@ public:
     sigslot::signal1<const std::string &> SignalRemoteOnline;
     sigslot::signal1<const std::string &> SignalRemoteLogin;
     sigslot::signal1<const std::string &> SignalRemoteOffline;
-    sigslot::signal2<const std::string &, const std::string &> SignalRemoteMessage;
+    sigslot::signal2<const std::string &, const std::vector<std::string>& > SignalRemoteMessage;
     
 protected: 
     void onStart_w();

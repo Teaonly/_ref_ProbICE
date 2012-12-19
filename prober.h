@@ -34,7 +34,7 @@ protected:
     void onOffline();
     void onRemoteOnline(const std::string &);
     void onRemoteOffline(const std::string &);
-    void onRemoteMessage(const std::string &, const std::string &);
+    void onRemoteMessage(const std::string &, const std::vector<std::string>& );
 
     // call back from PPSession
     void onSignalRequest(PPSession *);
@@ -50,9 +50,11 @@ private:
 
     std::string my_name_;
     std::string remote_name_;
+    bool remote_online_;
+
+    // prebuild resource for ppsession 
     talk_base::Thread *signal_thread_;
     talk_base::Thread *worker_thread_;    
-    
     talk_base::BasicNetworkManager *network_manager_;
     cricket::BasicPortAllocator *port_allocator_;
 };

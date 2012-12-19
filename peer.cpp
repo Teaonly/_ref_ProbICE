@@ -140,7 +140,11 @@ void Peer::processXML() {
         } else if ( words[0] == "login" ) {
             SignalRemoteLogin(words[1]);
         } else if ( words[0] == "message" ) {
-            SignalRemoteMessage(words[1], words[2]);
+            std::vector<std::string > msgBody;
+            for(int j = 2; j < (int)words.size(); j++)
+                msgBody.push_back(words[j]);
+
+            SignalRemoteMessage(words[1], msgBody);
         }
     }
 

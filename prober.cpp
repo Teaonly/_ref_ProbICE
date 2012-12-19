@@ -14,7 +14,8 @@ IceProber::IceProber() {
     worker_thread_->Start();
     signal_thread_ = new talk_base::Thread();
     signal_thread_->Start();
-
+    
+    remote_online_ = false;
     session_ = NULL;
     peer_ = NULL;
 }
@@ -134,7 +135,7 @@ void IceProber::onRemoteOffline(const std::string &remote) {
     std::cout << "Remote (" << remote << ") is offline" << std::endl;
 }
 
-void IceProber::onRemoteMessage(const std::string &remote, const std::string &msg) {
-    std::cout << "Remote (" << remote << ") say to me: " << msg << std::endl;
+void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std::string>& msgBody) {
+    std::cout << "Remote (" << remote << ") say to me: " << msgBody[0] << std::endl;
 }
 
