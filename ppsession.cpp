@@ -1,3 +1,4 @@
+#include <iostream>
 #include "talk/base/helpers.h"
 #include "ppsession.h"
 
@@ -229,6 +230,7 @@ void PPSession::OnTransportWritable(Transport* transport) {
 void PPSession::OnTransportCandidatesReady(Transport* transport,
         const Candidates& candidates) {
     ASSERT(signaling_thread()->IsCurrent());
+    std::cout << " PPSession::OnTransportCandidatesReady " << std::endl;
     TransportProxy* transproxy = GetTransportProxy(transport);
     if (transproxy != NULL) {
         if (pending_candidates_) {
