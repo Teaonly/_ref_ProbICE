@@ -63,7 +63,7 @@ void IceProber::Login(const std::string &server,
                                         address_nil,            //relay:udp
                                         address_nil,            //relay:tcp
                                         address_nil);           //relay:ssl
-    port_allocator_->et_flags(cricket::PORTALLOCATOR_DISABLE_TCP 
+    port_allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP 
                               + cricket::PORTALLOCATOR_DISABLE_RELAY);
 
     peer_ =  new Peer(server, 1979, my_name_, worker_thread_);
