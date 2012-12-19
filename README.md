@@ -7,14 +7,18 @@ the issue of blocking p2p.
 
 ## how to build ##
  * linux
-{ 
+<pre>    
     #ln -s ./linux/* . 
     #make all
-}
+</pre>
 
  * mac 
-{
+<pre>
     #ln -s ./mac/* . 
     #make all
-}
+</pre>
+
+ * Windows
+ Open the solution file for Visual Studio 2008 in win floder. 
+
 
