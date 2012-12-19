@@ -55,7 +55,7 @@ void IceProber::Login(const std::string &server,
     remote_name_ = remoteName;
 
     network_manager_ = new talk_base::BasicNetworkManager();
-    talk_base::SocketAddress address_stun("baidu.com", 1979);
+    talk_base::SocketAddress address_stun;  // addresss_stun("baidu.com", 1979);
     talk_base::SocketAddress address_nil;
     port_allocator_ = 
         new cricket::BasicPortAllocator(network_manager_,
@@ -63,6 +63,8 @@ void IceProber::Login(const std::string &server,
                                         address_nil,            //relay:udp
                                         address_nil,            //relay:tcp
                                         address_nil);           //relay:ssl
+    port_allocator_->et_flags(cricket::PORTALLOCATOR_DISABLE_TCP 
+                              + cricket::PORTALLOCATOR_DISABLE_RELAY);
 
     peer_ =  new Peer(server, 1979, my_name_, worker_thread_);
     peer_->SignalOnline.connect(this, &IceProber::onOnLine);
