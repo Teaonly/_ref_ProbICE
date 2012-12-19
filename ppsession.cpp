@@ -78,9 +78,9 @@ bool PPSession::Initiate(const std::string content) {
         return false;
     }
 
-    // TODO encoding message
     PPMessage msg;
     msg.type = PPMSG_SESSION_INITIATE;
+    msg.argvs.push_back(content);
     SignalOutgoingMessage(this, msg);
     
     SetState(Session::STATE_SENTINITIATE);
@@ -98,7 +98,6 @@ bool PPSession::Accept(const std::string content) {
     // Setup for signaling.
     set_local_description(new SessionDescription());
 
-    // TODO encoding message
     PPMessage msg;  
     msg.type = PPMSG_SESSION_ACCEPT;
     SignalOutgoingMessage(this, msg);
@@ -117,7 +116,6 @@ bool PPSession::Reject(const std::string& reason) {
     if (state() != STATE_RECEIVEDINITIATE && state() != STATE_RECEIVEDMODIFY)
         return false;
     
-    // TODO encoding message 
     PPMessage msg;
     msg.type = PPMSG_SESSION_REJECT;
     SignalOutgoingMessage(this, msg);
@@ -142,7 +140,6 @@ bool PPSession::TerminateWithReason(const std::string& reason) {
             break;
 
         default:
-            // TODO encoding message
             PPMessage msg;
             msg.type = PPMSG_SESSION_TERMINATE;
             SignalOutgoingMessage(this, msg);
@@ -253,7 +250,9 @@ bool PPSession::OnInitiateMessage(const PPMessage& msg) {
         return false;
 
     std::vector<P2PInfo> p2pInfos;
-    // TODO change msg to p2pInfos
+    P2PInfo newP2PInfo;
+    newP2PInfo.content_name = msg.argvs[0];
+    p2pInfos.push_back(newP2PInfo);
 
     if (!CreateTransportProxies(p2pInfos)) {
         return false;
@@ -275,7 +274,9 @@ bool PPSession::OnAcceptMessage(const PPMessage& msg) {
         return false;
 
     std::vector<P2PInfo> p2pInfos;
-    // TODO change msg to p2pInfos
+    P2PInfo newP2PInfo;
+    newP2PInfo.content_name = msg.argvs[0];
+    p2pInfos.push_back(newP2PInfo);
 
     SendAllUnsentTransportInfoMessages();
 
