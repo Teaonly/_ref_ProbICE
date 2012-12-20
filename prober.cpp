@@ -163,11 +163,11 @@ void IceProber::onRemoteOffline(const std::string &remote) {
 void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std::string>& msgBody) {
     PPMessage msg;
     if ( msgBody[0] == PP_STR_INITIATE) {
-        msg.id = PPMSG_SESSION_INITIATE;                
+        msg.type = PPMSG_SESSION_INITIATE;                
     } else if ( msgBody[0] == PP_STR_ACCEPT) {
-        msg.id = PPMSG_SESSION_ACCEPT;
+        msg.type = PPMSG_SESSION_ACCEPT;
     } else if ( msgBody[0] == PP_STR_TRANSPORT) {
-        msg.id = PPMSG_TRANSPORT_INFO;
+        msg.type = PPMSG_TRANSPORT_INFO;
     } else {
         // this message don't handle 
         return;
@@ -177,7 +177,6 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std
         msg.argvs.push_back( msgBody[i] );
     }
     
-    std::cout << " ****************************" << std::endl;
     // this function is running in signal_thread_ 
     session_->OnIncomingMessage(msg);
 }
