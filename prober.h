@@ -34,7 +34,7 @@ protected:
     // call back from peer
     void onOnLine(bool isOk);
     void onOffline();
-    void onRemoteLongin(const std::string&);
+    void onRemoteLogin(const std::string&);
     void onRemoteOnline(const std::string&);
     void onRemoteOffline(const std::string&);
     void onRemoteMessage(const std::string&, const std::vector<std::string>& );
@@ -46,6 +46,8 @@ protected:
     
     //internal helper functions
     void createSession_s();
+    void doInitiate_s();
+    void doAccept_s();
 
 private:
     PPSession *session_;

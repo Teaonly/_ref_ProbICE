@@ -4,15 +4,16 @@
 
 using namespace cricket;
 
+const std::string NS_PPSESSION("ppsession");
+
 PPSession::PPSession( const std::string& sid,
-        const std::string& content_type,
         talk_base::Thread* signal_thread,
         talk_base::Thread* worker_thread,
         PortAllocator* port_allocator)                     
 : BaseSession(signal_thread,
         worker_thread,
         port_allocator,
-        sid, content_type, true) {
+        sid, NS_PPSESSION, true) {
     pending_candidates_ = false;
     SignalState.connect(this, &PPSession::onStateChanged);
 }
@@ -59,7 +60,7 @@ void PPSession::OnIncomingMessage(const PPMessage& msg) {
     }
 }
 
-bool PPSession::Initiate(const std::string content) {
+bool PPSession::Initiate(const std::string& content) {
     ASSERT(signaling_thread()->IsCurrent());
     SessionError error;
 
@@ -67,13 +68,14 @@ bool PPSession::Initiate(const std::string content) {
     if (state() != STATE_INIT)
         return false;
 
+    // remember the my content_name
+    content_name_ = content;                        
     set_local_description(new SessionDescription());
     
     std::vector<P2PInfo> p2pInfos;
     P2PInfo p2pInfo;
-    p2pInfo.content_name = content;
+    p2pInfo.content_name = content_name_;
     p2pInfos.push_back(p2pInfo);
-
     if( !CreateTransportProxies(p2pInfos)) {
         return false;
     }
@@ -88,7 +90,7 @@ bool PPSession::Initiate(const std::string content) {
     return true;
 }
 
-bool PPSession::Accept(const std::string content) {
+bool PPSession::Accept() {
     ASSERT(signaling_thread()->IsCurrent());
 
     // Only if just received initiate
@@ -100,6 +102,7 @@ bool PPSession::Accept(const std::string content) {
 
     PPMessage msg;  
     msg.type = PPMSG_SESSION_ACCEPT;
+    msg.argvs.push_back(content_name_);     //we must make sure content equals recved by initiate
     SignalOutgoingMessage(this, msg);
     
     SetState(Session::STATE_SENTACCEPT);
@@ -249,15 +252,18 @@ bool PPSession::OnInitiateMessage(const PPMessage& msg) {
     if (!CheckState(STATE_INIT))
         return false;
 
+    // remember my content_name_
+    content_name_ = msg.argvs[0];
+    set_remote_description( new SessionDescription() ); 
+
     std::vector<P2PInfo> p2pInfos;
     P2PInfo newP2PInfo;
     newP2PInfo.content_name = msg.argvs[0];
     p2pInfos.push_back(newP2PInfo);
-
     if (!CreateTransportProxies(p2pInfos)) {
         return false;
     }
-    set_remote_description( new SessionDescription() );     //FXME empty description??
+    
 
     SetState(STATE_RECEIVEDINITIATE);
 
