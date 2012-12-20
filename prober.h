@@ -32,15 +32,16 @@ protected:
     // call back from peer
     void onOnLine(bool isOk);
     void onOffline();
-    void onRemoteOnline(const std::string &);
-    void onRemoteOffline(const std::string &);
-    void onRemoteMessage(const std::string &, const std::vector<std::string>& );
+    void onRemoteLongin(const std::string&);
+    void onRemoteOnline(const std::string&);
+    void onRemoteOffline(const std::string&);
+    void onRemoteMessage(const std::string&, const std::vector<std::string>& );
 
     // call back from PPSession
     void onSignalRequest(PPSession *);
     void onOutgoingMessage(PPSession *, const PPMessage&);
     void onStateChanged(PPSession *);
-
+    
     //internal helper functions
     void createSession_s();
 

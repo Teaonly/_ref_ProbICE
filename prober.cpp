@@ -34,7 +34,7 @@ IceProber::~IceProber() {
         network_manager_ = NULL;
     }
 
-
+    
 
 
 
@@ -70,13 +70,13 @@ void IceProber::Login(const std::string &server,
     peer_ =  new Peer(server, 1979, my_name_, worker_thread_);
     peer_->SignalOnline.connect(this, &IceProber::onOnLine);
     peer_->SignalOffline.connect(this, &IceProber::onOffline);
+    peer_->SignalRemoteLogin.connect(this, &IceProber::onRemoteLongin);
     peer_->SignalRemoteOnline.connect(this, &IceProber::onRemoteOnline);
     peer_->SignalRemoteOffline.connect(this, &IceProber::onRemoteOffline);
     peer_->SignalRemoteMessage.connect(this, &IceProber::onRemoteMessage);
     peer_->Start();
     
     signal_thread_->Post(this, MSG_CREATE_SESSION);
-
 }
 
 void IceProber::Run() {
@@ -99,7 +99,7 @@ void IceProber::createSession_s() {
     session_->SignalOutgoingMessage.connect(this, &IceProber::onOutgoingMessage);
     session_->SignalStateChanged.connect(this, &IceProber::onStateChanged);
 
-    session_->CreateChannel("data", "test");
+    session_->CreateChannel("data", "prober");
     session_->Initiate("data");
 }
 
@@ -113,6 +113,7 @@ void IceProber::onOutgoingMessage(PPSession *session, const PPMessage& msg) {
 }
 
 void IceProber::onStateChanged(PPSession *session) {
+    std::cout << "On IceProber::onStateChanged " << std::endl;
 }
 
 void IceProber::onOnLine(bool isOk) {
@@ -125,6 +126,10 @@ void IceProber::onOnLine(bool isOk) {
 
 void IceProber::onOffline() {
     std::cout << "Disconnect to server" << std::endl;
+}
+
+void IceProber::onRemoteLongin(const std::string& remote) {
+
 }
 
 void IceProber::onRemoteOnline(const std::string &remote) {
