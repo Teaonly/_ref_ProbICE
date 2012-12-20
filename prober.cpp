@@ -1,5 +1,6 @@
 #include <iostream>
 #include "talk/p2p/client/basicportallocator.h"
+#include "talk/p2p/base/p2ptransportchannel.h"
 #include "talk/base/network.h"
 #include "prober.h"
 #include "ppsession.h"
@@ -10,34 +11,24 @@ enum {
 };
 
 IceProber::IceProber() {
+    session_ = NULL;
+    peer_ = NULL;
+    targetChannel_ = NULL;
+
+    network_manager_ = NULL;
+    port_allocator_ = NULL;
+    remote_online_ = false;
+
+    content_name_ = "data";
+    channel_name_ = "prober";
+
     worker_thread_ = new talk_base::Thread();
     worker_thread_->Start();
     signal_thread_ = new talk_base::Thread();
     signal_thread_->Start();
-    
-    remote_online_ = false;
-    session_ = NULL;
-    peer_ = NULL;
 }
 
 IceProber::~IceProber() {
-    if ( peer_ ) {
-        delete peer_;
-        peer_ = NULL;
-    }
-    if ( session_ ) {
-        delete session_;
-        session_ = NULL;
-    }
-    if ( network_manager_ ) {
-        delete network_manager_;
-        network_manager_ = NULL;
-    }
-
-    
-
-
-
     if ( signal_thread_ ) {
         signal_thread_->Stop();
         delete signal_thread_;
@@ -99,8 +90,19 @@ void IceProber::createSession_s() {
     session_->SignalOutgoingMessage.connect(this, &IceProber::onOutgoingMessage);
     session_->SignalStateChanged.connect(this, &IceProber::onStateChanged);
 
-    session_->CreateChannel("data", "prober");
-    session_->Initiate("data");
+    session_->CreateChannel(content_name_, channel_name_);
+    if ( targetChannel_ ) {
+        std::cout << " targetChannel_ is not null" << std::endl;
+    }
+
+    session_->Initiate(content_name_);
+    
+    TransportChannel* channel = session_->GetChannel(content_name_, channel_name_);
+    targetChannel_ = channel->GetP2PChannel();
+
+    if ( targetChannel_ != NULL) {
+        std::cout << "tagetChannel is a P2PTransportChannel" << std::endl;
+    }
 }
 
 void IceProber::onSignalRequest(PPSession *session) {

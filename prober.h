@@ -7,6 +7,7 @@
 // predefined classes 
 namespace cricket {
 class BasicPortAllocator;
+class P2PTransportChannel;
 }
 namespace talk_base { 
 class BasicNetworkManager;
@@ -48,16 +49,19 @@ protected:
 private:
     PPSession *session_;
     Peer *peer_;
-
+    cricket::P2PTransportChannel *targetChannel_; 
+    
+    bool remote_online_;
+    std::string content_name_;
+    std::string channel_name_;
     std::string my_name_;
     std::string remote_name_;
-    bool remote_online_;
 
     // prebuild resource for ppsession 
-    talk_base::Thread *signal_thread_;
-    talk_base::Thread *worker_thread_;    
     talk_base::BasicNetworkManager *network_manager_;
     cricket::BasicPortAllocator *port_allocator_;
+    talk_base::Thread *signal_thread_;
+    talk_base::Thread *worker_thread_;    
 };
 
 #endif
