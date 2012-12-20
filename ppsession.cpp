@@ -28,7 +28,7 @@ void PPSession::OnMessage(talk_base::Message *pmsg) {
 
 void PPSession::OnIncomingMessage(const PPMessage& msg) {
     ASSERT(signaling_thread()->IsCurrent());
-    ASSERT(state() == STATE_INIT);
+    //ASSERT(state() == STATE_INIT);
 
     bool valid = false;
     switch (msg.type) {
@@ -235,6 +235,7 @@ void PPSession::OnTransportCandidatesReady(Transport* transport,
     if (transproxy != NULL) {
         if (pending_candidates_) {
             transproxy->AddUnsentCandidates(candidates);
+            std::cout << " get new candidates" << std::endl;
         } else {
             if (!SendTransportInfoMessage(transproxy, candidates)) {
                 return;

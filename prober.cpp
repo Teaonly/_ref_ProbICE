@@ -61,7 +61,7 @@ void IceProber::Login(const std::string &server,
     port_allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP 
                               + cricket::PORTALLOCATOR_DISABLE_RELAY);
 
-    peer_ =  new Peer(server, 1979, my_name_, worker_thread_);
+    peer_ =  new Peer(server, 1979, my_name_, signal_thread_);
     peer_->SignalOnline.connect(this, &IceProber::onOnLine);
     peer_->SignalOffline.connect(this, &IceProber::onOffline);
     peer_->SignalRemoteLogin.connect(this, &IceProber::onRemoteLogin);
@@ -100,13 +100,13 @@ void IceProber::onOutgoingMessage(PPSession *session, const PPMessage& msg) {
     std::string msgType;
     switch(msg.type) {
         case PPMSG_SESSION_INITIATE:
-            msgType = "initiate";
+            msgType = PP_STR_INITIATE;
             break;
         case PPMSG_SESSION_ACCEPT:
-            msgType = "accept";
+            msgType = PP_STR_ACCEPT;
             break;
         case PPMSG_TRANSPORT_INFO:
-            msgType = "trasnport";
+            msgType = PP_STR_TRANSPORT;
             break;
 
         default:
@@ -161,7 +161,25 @@ void IceProber::onRemoteOffline(const std::string &remote) {
 }
 
 void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std::string>& msgBody) {
+    PPMessage msg;
+    if ( msgBody[0] == PP_STR_INITIATE) {
+        msg.id = PPMSG_SESSION_INITIATE;                
+    } else if ( msgBody[0] == PP_STR_ACCEPT) {
+        msg.id = PPMSG_SESSION_ACCEPT;
+    } else if ( msgBody[0] == PP_STR_TRANSPORT) {
+        msg.id = PPMSG_TRANSPORT_INFO;
+    } else {
+        // this message don't handle 
+        return;
+    } 
     
+    for(int i = 1; i < (int)msgBody.size(); i++) {
+        msg.argvs.push_back( msgBody[i] );
+    }
+    
+    std::cout << " ****************************" << std::endl;
+    // this function is running in signal_thread_ 
+    session_->OnIncomingMessage(msg);
 }
 
 void IceProber::createSession_s() {

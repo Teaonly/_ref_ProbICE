@@ -25,6 +25,10 @@ enum {
     PPMSG_TRANSPORT_INFO,
 };
 
+const std::string PP_STR_INITIATE("pp_initiate");
+const std::string PP_STR_ACCEPT("pp_accept");
+const std::string PP_STR_TRANSPORT("pp_transport");
+
 class PPMessage {
 public:
     PPMessage() {
