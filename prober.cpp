@@ -105,6 +105,9 @@ void IceProber::onOutgoingMessage(PPSession *session, const PPMessage& msg) {
         case PPMSG_SESSION_ACCEPT:
             msgType = "accept";
             break;
+        case PPMSG_TRANSPORT_INFO:
+            msgType = "trasnport";
+            break;
 
         default:
             return;
