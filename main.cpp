@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     }
 
     IceProber *pProber = new IceProber();
-    pProber->Login("127.0.0.1", 1979, argv[1], argv[2]);
+    pProber->Login(argv[1], 1979, argv[2], argv[3]);
     pProber->Run();    
     
     return 0;

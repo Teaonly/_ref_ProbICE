@@ -160,6 +160,10 @@ void IceProber::doInitiate_s() {
 	if ( channel ) {
 		targetChannel_ = channel->GetP2PChannel();
 	}
+
+    if ( targetTransport_ && targetChannel_ ) {
+        std::cout << "targetTranport and targetChannel are all ready!" << std::endl;
+    }
 }
 
 void IceProber::doAccept_s() {
