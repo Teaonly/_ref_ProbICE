@@ -1,4 +1,6 @@
+#include <sstream>
 #include <iostream>
+#include <stdlib.H>
 #include "talk/base/helpers.h"
 #include "ppsession.h"
 
@@ -322,7 +324,7 @@ bool PPSession::OnTerminateMessage(const PPMessage& msg) {
 
 bool PPSession::OnTransportInfoMessage(const PPMessage& msg) {
     std::vector<P2PInfo> p2pInfos;
-    // TODO change msg to tinfos; 
+    
 
     if (!OnRemoteCandidates(p2pInfos))
         return false;
@@ -331,9 +333,24 @@ bool PPSession::OnTransportInfoMessage(const PPMessage& msg) {
 }
 
 bool PPSession::SendTransportInfoMessage(const TransportProxy* transproxy, const Candidates& candidates) {
-    // TODO encoding PPMessage
     PPMessage msg;
     msg.type = PPMSG_TRANSPORT_INFO;
+    msg.argvs.push_back( transproxy->content_name() );
+    
+    for( int i = 0; i < (int)candidates.size(); i++) {
+        msg.argvs.push_back(candidates[i].name() );
+        msg.argvs.push_back(candidates[i].protocol());
+        msg.argvs.push_back(candidates[i].preference_str());
+        msg.argvs.push_back(candidates[i].address().IPAsString());
+        msg.argvs.push_back(candidates[i].address().PortAsString());
+        msg.argvs.push_back(candidates[i].username());
+        msg.argvs.push_back(candidates[i].password());
+        msg.argvs.push_back(candidates[i].type() );
+        msg.argvs.push_back(candidates[i].network_name());
+        msg.argvs.push_back(candidates[i].generation_str());
+        // SocketAddress to string 
+    }
+    
     SignalOutgoingMessage(this, msg);
     return true;
 }
