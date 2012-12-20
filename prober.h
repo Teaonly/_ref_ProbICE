@@ -7,8 +7,8 @@
 // predefined classes 
 namespace cricket {
 class BasicPortAllocator;
-class TransportChannel;
-class P2PTransport;
+class P2PTransportChannel;
+class Transport;
 }
 namespace talk_base { 
 class BasicNetworkManager;
