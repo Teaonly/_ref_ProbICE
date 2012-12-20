@@ -97,12 +97,15 @@ void IceProber::createSession_s() {
 
     session_->Initiate(content_name_);
     
-    TransportChannel* channel = session_->GetChannel(content_name_, channel_name_);
-    targetChannel_ = channel->GetP2PChannel();
 
-    if ( targetChannel_ != NULL) {
-        std::cout << "tagetChannel is a P2PTransportChannel" << std::endl;
-    }
+	TransportChannel* channel = session_->GetTransport(content_name_)->GetChannel(channel_name_);
+	if ( channel ) {
+		targetChannel_ = channel->GetP2PChannel();
+	}
+	if ( targetChannel_ != NULL) {
+		std::cout << "tagetChannel is a P2PTransportChannel" << std::endl;
+	}
+
 }
 
 void IceProber::onSignalRequest(PPSession *session) {
