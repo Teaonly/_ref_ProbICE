@@ -97,7 +97,25 @@ void IceProber::onSignalRequest(PPSession *session) {
 }
 
 void IceProber::onOutgoingMessage(PPSession *session, const PPMessage& msg) {
-    std::cout << "On IceProber::onOutgoingMessage " << std::endl;
+    std::string msgType;
+    switch(msg.type) {
+        case PPMSG_SESSION_INITIATE:
+            msgType = "initiate";
+            break;
+        case PPMSG_SESSION_ACCEPT:
+            msgType = "accept";
+            break;
+
+        default:
+            return;
+    }
+
+    std::vector<std::string> msgBody;
+    msgBody.push_back(msgType);
+    for(int i = 0; i < (int)msg.argvs.size(); i++) {
+        msgBody.push_back(msg.argvs[i]);
+    }
+    peer_->SendMessage( remote_name_,  msgBody);
 }
 
 void IceProber::onStateChanged(PPSession *session) {
@@ -140,7 +158,7 @@ void IceProber::onRemoteOffline(const std::string &remote) {
 }
 
 void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std::string>& msgBody) {
-    std::cout << "Remote (" << remote << ") say to me: " << msgBody[0] << std::endl;
+    
 }
 
 void IceProber::createSession_s() {

@@ -34,10 +34,19 @@ void Peer::Start() {
     worker_thread_->Post(this, MSG_START); 
 }
 
-int Peer::SendMessage(const std::string &to, const std::string &msg) {
+int Peer::SendMessage(const std::string &to, const std::vector<std::string>& msg) {
     if ( !isOnline_ ) {
         return -1;
     }
+
+    std::string msgPayload = "<send:" + to;
+    for(int i = 0; i < (int)msg.size(); i++) {
+        msgPayload = msgPayload + ":" + msg[i];
+    }
+    msgPayload = msgPayload + ">";
+    
+    sock_->Send( msgPayload.c_str(), msgPayload.size() );
+
     return 0;
 }
 

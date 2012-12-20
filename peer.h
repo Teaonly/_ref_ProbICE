@@ -18,7 +18,7 @@ public:
     
     virtual void OnMessage(talk_base::Message *msg);
     void Start();
-    int SendMessage(const std::string &, const std::string &);
+    int SendMessage(const std::string &, const std::vector<std::string>& );
     sigslot::signal1<bool> SignalOnline;
     sigslot::signal0<> SignalOffline;
     sigslot::signal1<const std::string &> SignalRemoteOnline;
