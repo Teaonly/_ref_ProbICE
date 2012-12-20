@@ -13,6 +13,7 @@ enum {
 IceProber::IceProber() {
     session_ = NULL;
     peer_ = NULL;
+    targetTransport_ = NULL;
     targetChannel_ = NULL;
 
     network_manager_ = NULL;
@@ -91,21 +92,17 @@ void IceProber::createSession_s() {
     session_->SignalStateChanged.connect(this, &IceProber::onStateChanged);
 
     session_->CreateChannel(content_name_, channel_name_);
-    if ( targetChannel_ ) {
-        std::cout << " targetChannel_ is not null" << std::endl;
-    }
 
     session_->Initiate(content_name_);
-    
-
-	TransportChannel* channel = session_->GetTransport(content_name_)->GetChannel(channel_name_);
+	
+    targetTransport_ = session_->GetTransport(content_name_);
+    TransportChannel* channel = targetTransport_->GetChannel(channel_name_);
 	if ( channel ) {
 		targetChannel_ = channel->GetP2PChannel();
 	}
 	if ( targetChannel_ != NULL) {
 		std::cout << "tagetChannel is a P2PTransportChannel" << std::endl;
 	}
-
 }
 
 void IceProber::onSignalRequest(PPSession *session) {
