@@ -192,7 +192,15 @@ void IceProber::createSession_s() {
 
 void IceProber::doInitiate_s() {
     session_->Initiate(content_name_);
-	
+    setupTarget();    
+}
+
+void IceProber::doAccept_s() {
+    session_->Accept();
+    setupTarget(); 
+}
+
+void IceProber::setupTarget() {
     targetTransport_ = session_->GetTransport(content_name_);
     TransportChannel* channel = targetTransport_->GetChannel(channel_name_);
 	if ( channel ) {
@@ -203,9 +211,3 @@ void IceProber::doInitiate_s() {
         std::cout << "targetTranport and targetChannel are all ready!" << std::endl;
     }
 }
-
-void IceProber::doAccept_s() {
-    session_->Accept();    
-}
-
-

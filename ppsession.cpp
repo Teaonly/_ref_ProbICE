@@ -1,6 +1,6 @@
 #include <sstream>
 #include <iostream>
-#include <stdlib.H>
+#include <stdlib.h>
 #include "talk/base/helpers.h"
 #include "ppsession.h"
 
@@ -74,11 +74,9 @@ bool PPSession::Initiate(const std::string& content) {
     content_name_ = content;                        
     set_local_description(new SessionDescription());
     
-    std::vector<P2PInfo> p2pInfos;
     P2PInfo p2pInfo;
     p2pInfo.content_name = content_name_;
-    p2pInfos.push_back(p2pInfo);
-    if( !CreateTransportProxies(p2pInfos)) {
+    if( !CreateTransportProxies(p2pInfo)) {
         return false;
     }
 
@@ -163,40 +161,36 @@ bool PPSession::CheckState(State expected) {
     return true;
 }
 
-bool PPSession::CreateTransportProxies(std::vector<P2PInfo>& p2pInfos) {
+bool PPSession::CreateTransportProxies(const P2PInfo& p2pInfo) {
     pending_candidates_ = true;
-    for (int i = 0; i < (int)p2pInfos.size(); i++) {
-        GetOrCreateTransportProxy(p2pInfos[i].content_name);
-    }
+    GetOrCreateTransportProxy(p2pInfo.content_name);
     return true;
 }
 
 
-bool PPSession::OnRemoteCandidates(const std::vector<P2PInfo>& p2pinfos) {
-    for (int i = 0; i < (int)p2pinfos.size(); i++ ) {
-        const P2PInfo *tinfo = &p2pinfos[i];
+bool PPSession::OnRemoteCandidates(const P2PInfo& p2pinfos) {
+    const P2PInfo *tinfo = &p2pinfos;
 
-        TransportProxy* transproxy = GetTransportProxy(tinfo->content_name);
-        if (transproxy == NULL) {
+    TransportProxy* transproxy = GetTransportProxy(tinfo->content_name);
+    if (transproxy == NULL) {
+        return false;
+    }
+
+    // Must complete negotiation before sending remote candidates, or
+    // there won't be any channel impls.
+    transproxy->CompleteNegotiation();
+    for (Candidates::const_iterator cand = tinfo->candidates_.begin();
+            cand != tinfo->candidates_.end(); ++cand) {
+        
+        ParseError err;
+        if (!transproxy->impl()->VerifyCandidate(*cand, &err))
+            return false;
+
+        if (!transproxy->impl()->HasChannel(cand->name())) {
             return false;
         }
-
-        // Must complete negotiation before sending remote candidates, or
-        // there won't be any channel impls.
-        transproxy->CompleteNegotiation();
-        for (Candidates::const_iterator cand = tinfo->candidates_.begin();
-                cand != tinfo->candidates_.end(); ++cand) {
-            
-            ParseError err;
-            if (!transproxy->impl()->VerifyCandidate(*cand, &err))
-                return false;
-
-            if (!transproxy->impl()->HasChannel(cand->name())) {
-                return false;
-            }
-        }
-        transproxy->impl()->OnRemoteCandidates(tinfo->candidates_);
     }
+    transproxy->impl()->OnRemoteCandidates(tinfo->candidates_);
 
     return true;
 }
@@ -259,11 +253,9 @@ bool PPSession::OnInitiateMessage(const PPMessage& msg) {
     content_name_ = msg.argvs[0];
     set_remote_description( new SessionDescription() ); 
 
-    std::vector<P2PInfo> p2pInfos;
     P2PInfo newP2PInfo;
     newP2PInfo.content_name = msg.argvs[0];
-    p2pInfos.push_back(newP2PInfo);
-    if (!CreateTransportProxies(p2pInfos)) {
+    if (!CreateTransportProxies(newP2PInfo)) {
         return false;
     }
     
@@ -272,7 +264,7 @@ bool PPSession::OnInitiateMessage(const PPMessage& msg) {
 
     // Users of Session may listen to state change and call Reject().
     if (state() != STATE_SENTREJECT) {
-        if (!OnRemoteCandidates(p2pInfos))
+        if (!OnRemoteCandidates(newP2PInfo))
             return false;
     }
     return true;
@@ -282,10 +274,8 @@ bool PPSession::OnAcceptMessage(const PPMessage& msg) {
     if (!CheckState(STATE_SENTINITIATE))
         return false;
 
-    std::vector<P2PInfo> p2pInfos;
     P2PInfo newP2PInfo;
     newP2PInfo.content_name = msg.argvs[0];
-    p2pInfos.push_back(newP2PInfo);
 
     SendAllUnsentTransportInfoMessages();
 
@@ -295,7 +285,7 @@ bool PPSession::OnAcceptMessage(const PPMessage& msg) {
 
     // Users of Session may listen to state change and call Reject().
     if (state() != STATE_SENTREJECT) {
-        if (!OnRemoteCandidates(p2pInfos))
+        if (!OnRemoteCandidates(newP2PInfo))
             return false;
     }
 
@@ -323,10 +313,10 @@ bool PPSession::OnTerminateMessage(const PPMessage& msg) {
 }
 
 bool PPSession::OnTransportInfoMessage(const PPMessage& msg) {
-    std::vector<P2PInfo> p2pInfos;
-    
+    P2PInfo p2pInfo;
+     
 
-    if (!OnRemoteCandidates(p2pInfos))
+    if (!OnRemoteCandidates(p2pInfo))
         return false;
 
     return true;
@@ -348,7 +338,6 @@ bool PPSession::SendTransportInfoMessage(const TransportProxy* transproxy, const
         msg.argvs.push_back(candidates[i].type() );
         msg.argvs.push_back(candidates[i].network_name());
         msg.argvs.push_back(candidates[i].generation_str());
-        // SocketAddress to string 
     }
     
     SignalOutgoingMessage(this, msg);

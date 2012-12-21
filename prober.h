@@ -48,6 +48,7 @@ protected:
     void createSession_s();
     void doInitiate_s();
     void doAccept_s();
+    void setupTarget();
 
 private:
     PPSession *session_;

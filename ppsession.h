@@ -45,8 +45,8 @@ public:
 private:
     // some inernal help functions
     bool CheckState(State state);
-    bool CreateTransportProxies(std::vector<P2PInfo>& p2pInfos);
-    bool OnRemoteCandidates(const std::vector<P2PInfo>& p2pInfos);
+    bool CreateTransportProxies(const P2PInfo& p2pInfo);
+    bool OnRemoteCandidates(const P2PInfo& p2pInfo);
     bool SendTransportInfoMessage(const TransportProxy* transproxy, const Candidates& candidates);
     bool SendAllUnsentTransportInfoMessages();
     void onStateChanged(BaseSession*, BaseSession::State newState);
