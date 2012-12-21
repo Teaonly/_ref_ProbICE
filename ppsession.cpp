@@ -329,6 +329,7 @@ bool PPSession::OnTransportInfoMessage(const PPMessage& msg) {
         cand.set_type(msg.argvs[i*10+1+7]);
         cand.set_network_name(msg.argvs[i*10+1+8]);
         cand.set_generation_str(msg.argvs[i*10+1+9]);
+		p2pInfo.candidates_.push_back(cand);
     }
 
     if (!OnRemoteCandidates(p2pInfo))
