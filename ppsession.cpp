@@ -314,7 +314,22 @@ bool PPSession::OnTerminateMessage(const PPMessage& msg) {
 
 bool PPSession::OnTransportInfoMessage(const PPMessage& msg) {
     P2PInfo p2pInfo;
-     
+    p2pInfo.content_name = msg.argvs[0]; 
+    
+    int nCandidates = (msg.argvs.size() - 1) / 10;
+    for (int i = 0; i < nCandidates; i++) {
+        cricket::Candidate cand;
+        talk_base::SocketAddress addr( msg.argvs[i*10+1+3], atoi(msg.argvs[i*10+1+4].c_str()) );
+        cand.set_name( msg.argvs[i*10+1+0] );
+        cand.set_protocol( msg.argvs[i*10+1+1] );
+        cand.set_preference_str( msg.argvs[i*10+1+2] );
+        cand.set_address(addr); //3,4
+        cand.set_username(msg.argvs[i*10+1+5]);
+        cand.set_password(msg.argvs[i*10+1+6]);
+        cand.set_type(msg.argvs[i*10+1+7]);
+        cand.set_network_name(msg.argvs[i*10+1+8]);
+        cand.set_generation_str(msg.argvs[i*10+1+9]);
+    }
 
     if (!OnRemoteCandidates(p2pInfo))
         return false;
