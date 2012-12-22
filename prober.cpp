@@ -52,11 +52,11 @@ void IceProber::Login(const std::string &server,
     remote_name_ = remoteName;
 
     network_manager_ = new talk_base::BasicNetworkManager();
-    talk_base::SocketAddress address_stun;  // addresss_stun("baidu.com", 1979);
+    talk_base::SocketAddress address_stun("stun.l.google.com", 19302);
     talk_base::SocketAddress address_nil;
     port_allocator_ = 
         new cricket::BasicPortAllocator(network_manager_,
-                                        address_stun,            //stun
+                                        address_nil,            //stun
                                         address_nil,            //relay:udp
                                         address_nil,            //relay:tcp
                                         address_nil);           //relay:ssl
@@ -183,9 +183,21 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std
     session_->OnIncomingMessage(msg);
 }
 
-
+/*
 void IceProber::onMonitorCallback(cricket::SocketMonitor *, const std::vector<cricket::ConnectionInfo>& ) {
     // monitor
+}
+*/
+
+void IceProber::onChannelWriteable(cricket::TransportChannel*) {
+    targetChannel_->SendPacket("ABCD", 4);
+}
+
+void IceProber::onChannelReadPacket(cricket::TransportChannel*,const char* data, size_t len) {
+    char temp[128];
+    memcpy(temp, data, len);
+    temp[len+1] = 0;
+    std::cout << "Get packet:" << temp << std::endl;
 }
 
 void IceProber::createSession_s() {
@@ -213,9 +225,12 @@ void IceProber::setupTarget() {
 	if ( channel ) {
 		targetChannel_ = channel->GetP2PChannel();
         
-        monitor_ = new SocketMonitor(channel, worker_thread_, signal_thread_);
-        monitor_->SignalUpdate.connect(this, &IceProber::onMonitorCallback);  
-        monitor_->Start(100);
+        targetChannel_->SignalWritableState.connect(this, &IceProber::onChannelWriteable);
+        targetChannel_->SignalReadPacket.connect(this, &IceProber::onChannelReadPacket);
+
+        //monitor_ = new SocketMonitor(channel, worker_thread_, signal_thread_);
+        //monitor_->SignalUpdate.connect(this, &IceProber::onMonitorCallback);  
+        //monitor_->Start(100);
     }
 }
 

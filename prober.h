@@ -8,6 +8,7 @@
 namespace cricket {
 class BasicPortAllocator;
 class P2PTransportChannel;
+class TransportChannel;
 class SocketMonitor;
 class Transport;
 }
@@ -46,7 +47,9 @@ protected:
     void onStateChanged(PPSession *);
 
     // monitor call back
-    void onMonitorCallback(cricket::SocketMonitor *, const std::vector<cricket::ConnectionInfo>& );
+    void onChannelWriteable(cricket::TransportChannel*);
+    void onChannelReadPacket(cricket::TransportChannel*,const char*, size_t);
+    //void onMonitorCallback(cricket::SocketMonitor *, const std::vector<cricket::ConnectionInfo>& );
     
     //internal helper functions
     void createSession_s();
