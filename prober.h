@@ -8,6 +8,7 @@
 namespace cricket {
 class BasicPortAllocator;
 class P2PTransportChannel;
+class SocketMonitor;
 class Transport;
 }
 namespace talk_base { 
@@ -43,6 +44,9 @@ protected:
     void onSignalRequest(PPSession *);
     void onOutgoingMessage(PPSession *, const PPMessage&);
     void onStateChanged(PPSession *);
+
+    // monitor call back
+    void onMonitorCallback(cricket::SocketMonitor *, const std::vector<cricket::ConnectionInfo>& );
     
     //internal helper functions
     void createSession_s();
@@ -56,7 +60,8 @@ private:
    
     cricket::Transport*             targetTransport_;
     cricket::P2PTransportChannel*   targetChannel_;
-    
+    cricket::SocketMonitor*         monitor_;
+
     bool remote_online_;
     std::string content_name_;
     std::string channel_name_;

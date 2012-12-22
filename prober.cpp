@@ -1,6 +1,7 @@
 #include <iostream>
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/p2p/base/p2ptransportchannel.h"
+#include "talk/p2p/client/socketmonitor.h"
 #include "talk/base/network.h"
 #include "prober.h"
 #include "ppsession.h"
@@ -17,6 +18,7 @@ IceProber::IceProber() {
     peer_ = NULL;
     targetTransport_ = NULL;
     targetChannel_ = NULL;
+    monitor_ = NULL;
 
     network_manager_ = NULL;
     port_allocator_ = NULL;
@@ -169,7 +171,7 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std
     } else if ( msgBody[0] == PP_STR_TRANSPORT) {
         msg.type = PPMSG_TRANSPORT_INFO;
     } else {
-        // this message don't handle 
+        // messages don't handle 
         return;
     } 
     
@@ -179,6 +181,11 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std
     
     // this function is running in signal_thread_ 
     session_->OnIncomingMessage(msg);
+}
+
+
+void IceProber::onMonitorCallback(cricket::SocketMonitor *, const std::vector<cricket::ConnectionInfo>& ) {
+    // monitor
 }
 
 void IceProber::createSession_s() {
@@ -205,9 +212,10 @@ void IceProber::setupTarget() {
     TransportChannel* channel = targetTransport_->GetChannel(channel_name_);
 	if ( channel ) {
 		targetChannel_ = channel->GetP2PChannel();
-	}
-
-    if ( targetTransport_ && targetChannel_ ) {
-        std::cout << "targetTranport and targetChannel are all ready!" << std::endl;
+        
+        monitor_ = new SocketMonitor(channel, worker_thread_, signal_thread_);
+        monitor_->SignalUpdate.connect(this, &IceProber::onMonitorCallback);  
+        monitor_->Start(100);
     }
 }
+
