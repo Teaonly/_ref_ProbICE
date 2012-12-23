@@ -11,6 +11,7 @@ enum {
     MSG_CREATE_SESSION,
     MSG_DO_INITIATE,
     MSG_DO_ACCEPT,
+    MSG_DO_DATA,
 };
 
 IceProber::IceProber() {
@@ -90,6 +91,9 @@ void IceProber::OnMessage(talk_base::Message *msg) {
             break;
         case MSG_DO_ACCEPT:
             doAccept_s();
+            break;
+        case MSG_DO_DATA:
+            doData_s();
             break;
     }
 }
@@ -191,6 +195,7 @@ void IceProber::onMonitorCallback(cricket::SocketMonitor *, const std::vector<cr
 
 void IceProber::onChannelWriteable(cricket::TransportChannel*) {
     targetChannel_->SendPacket("ABCD", 4);
+    signal_thread_->PostDelayed(1000, this, MSG_DO_DATA); 
 }
 
 void IceProber::onChannelReadPacket(cricket::TransportChannel*,const char* data, size_t len) {
@@ -218,6 +223,10 @@ void IceProber::doInitiate_s() {
 void IceProber::doAccept_s() {
     session_->Accept();
     setupTarget(); 
+}
+
+void IceProber::doData_s() {
+    onChannelWriteable(NULL);    
 }
 
 void IceProber::setupTarget() {
