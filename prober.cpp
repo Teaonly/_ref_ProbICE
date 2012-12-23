@@ -196,7 +196,7 @@ void IceProber::onChannelWriteable(cricket::TransportChannel*) {
 void IceProber::onChannelReadPacket(cricket::TransportChannel*,const char* data, size_t len) {
     char temp[128];
     memcpy(temp, data, len);
-    temp[len+1] = 0;
+    temp[len] = 0;
     std::cout << "Get packet:" << temp << std::endl;
 }
 
@@ -206,6 +206,7 @@ void IceProber::createSession_s() {
     session_->SignalOutgoingMessage.connect(this, &IceProber::onOutgoingMessage);
     session_->SignalStateChanged.connect(this, &IceProber::onStateChanged);
 
+    session_->set_allow_local_ips(true);
     session_->CreateChannel(content_name_, channel_name_);
 }
 
