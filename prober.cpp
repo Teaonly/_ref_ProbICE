@@ -56,7 +56,7 @@ void IceProber::Login(const std::string &server,
     talk_base::SocketAddress address_nil;
     port_allocator_ = 
         new cricket::BasicPortAllocator(network_manager_,
-                                        address_nil,            //stun
+                                        address_stun,            //stun
                                         address_nil,            //relay:udp
                                         address_nil,            //relay:tcp
                                         address_nil);           //relay:ssl
