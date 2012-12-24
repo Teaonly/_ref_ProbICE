@@ -67,7 +67,8 @@ class SocketMonitor : public talk_base::MessageHandler,
 
   talk_base::Thread *monitor_thread() { return monitoring_thread_; }
 
-  sigslot::signal2<SocketMonitor *,
+  sigslot::signal3<SocketMonitor *,
+                   const std::string &,
                    const std::vector<ConnectionInfo> &> SignalUpdate;
 
  protected:

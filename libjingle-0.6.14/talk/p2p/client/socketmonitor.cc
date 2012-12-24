@@ -96,7 +96,7 @@ void SocketMonitor::OnMessage(talk_base::Message *message) {
       ASSERT(talk_base::Thread::Current() == monitoring_thread_);
       std::vector<ConnectionInfo> infos = connection_infos_;
       crit_.Leave();
-      SignalUpdate(this, infos);
+      SignalUpdate(this, "Timer", infos);
       crit_.Enter();
     }
     break;

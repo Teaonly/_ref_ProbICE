@@ -199,7 +199,7 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std
     session_->OnIncomingMessage(msg);
 }
 
-void IceProber::onMonitorCallback(cricket::SocketMonitor *, const std::vector<cricket::ConnectionInfo>& ) {
+void IceProber::onMonitorCallback(cricket::SocketMonitor *, const std::string& , const std::vector<cricket::ConnectionInfo>& ) {
     // monitor
 }
 

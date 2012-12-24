@@ -40,5 +40,6 @@ the issue of blocking p2p.
  <Pre>
     #ProbIce session_server local_name remote_name
  </Pre>
-The ICE progress will auto started, the total ICE internal state will report to STDOUT, you can save the STDOUT to a txt file.
+
+ The ICE progress will auto started, the total ICE internal state will report to a txt file.
 
