@@ -1,6 +1,8 @@
 #ifndef _PROBER_H_
 #define _PROBER_H_
 
+#include <iostream>
+#include <fstream>
 #include "talk/base/thread.h"
 #include "talk/base/messagequeue.h"
 
@@ -10,6 +12,7 @@ class BasicPortAllocator;
 class P2PTransportChannel;
 class TransportChannel;
 class SocketMonitor;
+class ConnectionInfo;
 class Transport;
 }
 namespace talk_base { 
@@ -21,7 +24,7 @@ class Peer;
 
 class IceProber : public sigslot::has_slots<>, public talk_base::MessageHandler {  
 public:
-    IceProber();
+    IceProber(const std::string& fname="prober.txt");
     ~IceProber();
     
     virtual void OnMessage(talk_base::Message *msg);
@@ -49,7 +52,7 @@ protected:
     // monitor call back
     void onChannelWriteable(cricket::TransportChannel*);
     void onChannelReadPacket(cricket::TransportChannel*,const char*, size_t);
-    //void onMonitorCallback(cricket::SocketMonitor *, const std::vector<cricket::ConnectionInfo>& );
+    void onMonitorCallback(cricket::SocketMonitor *, const std::vector<cricket::ConnectionInfo>& );
     
     //internal helper functions
     void createSession_s();
@@ -64,7 +67,9 @@ private:
    
     cricket::Transport*             targetTransport_;
     cricket::P2PTransportChannel*   targetChannel_;
-    cricket::SocketMonitor*         monitor_;
+
+    std::ofstream*              output_;
+    cricket::SocketMonitor*     monitor_;
 
     bool remote_online_;
     std::string content_name_;

@@ -45,7 +45,12 @@ int Peer::SendMessage(const std::string &to, const std::vector<std::string>& msg
     }
     msgPayload = msgPayload + ">";
     
+     
     sock_->Send( msgPayload.c_str(), msgPayload.size() );
+
+#ifdef _DEBUG_ 
+    std::cout << "Send string to server: " << msgPayload.c_str() << std::endl;
+#endif
 
     return 0;
 }

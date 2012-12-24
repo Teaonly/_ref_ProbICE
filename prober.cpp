@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/p2p/base/p2ptransportchannel.h"
 #include "talk/p2p/client/socketmonitor.h"
@@ -14,11 +16,14 @@ enum {
     MSG_DO_DATA,
 };
 
-IceProber::IceProber() {
+IceProber::IceProber(const std::string& fname) {
     session_ = NULL;
     peer_ = NULL;
     targetTransport_ = NULL;
     targetChannel_ = NULL;
+
+    output_ = new std::ofstream();
+    output_->open(fname.c_str(), std::ios::out); 
     monitor_ = NULL;
 
     network_manager_ = NULL;
@@ -43,6 +48,11 @@ IceProber::~IceProber() {
         worker_thread_->Stop();
         delete worker_thread_;
     } 
+
+    if( output_ && output_->is_open() ) {
+        output_->close();
+        delete output_;
+    }
 }
 
 void IceProber::Login(const std::string &server, 
@@ -141,14 +151,16 @@ void IceProber::onStateChanged(PPSession *session) {
 
 void IceProber::onOnLine(bool isOk) {
     if ( isOk ) {
-        std::cout << "Connected to server is OK" << std::endl;
+        std::cout << "Connected to server is OK, wait remote" << std::endl;
     } else {
-        std::cout << "Can't connect to server" << std::endl;
+        std::cout << "Can't connect to server, exit from server" << std::endl;
+        exit(-1);
     }
 }
 
 void IceProber::onOffline() {
     std::cout << "Disconnect to server" << std::endl;
+    exit(-1);
 }
 
 void IceProber::onRemoteLogin(const std::string& remote) {
@@ -187,11 +199,9 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std
     session_->OnIncomingMessage(msg);
 }
 
-/*
 void IceProber::onMonitorCallback(cricket::SocketMonitor *, const std::vector<cricket::ConnectionInfo>& ) {
     // monitor
 }
-*/
 
 void IceProber::onChannelWriteable(cricket::TransportChannel*) {
     targetChannel_->SendPacket("ABCD", 4);
@@ -237,10 +247,12 @@ void IceProber::setupTarget() {
         
         targetChannel_->SignalWritableState.connect(this, &IceProber::onChannelWriteable);
         targetChannel_->SignalReadPacket.connect(this, &IceProber::onChannelReadPacket);
-
-        //monitor_ = new SocketMonitor(channel, worker_thread_, signal_thread_);
-        //monitor_->SignalUpdate.connect(this, &IceProber::onMonitorCallback);  
-        //monitor_->Start(100);
+        
+        if( output_ && output_->is_open() ) {
+            monitor_ = new SocketMonitor(channel, worker_thread_, signal_thread_);
+            monitor_->SignalUpdate.connect(this, &IceProber::onMonitorCallback);  
+            monitor_->Start(500);
+        }
     }
 }
 

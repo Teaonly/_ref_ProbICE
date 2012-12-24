@@ -34,11 +34,11 @@ the issue of blocking p2p.
 * run in two peers
  In local
  <pre>
-    #ProbIce <session_server> local_name remote_name
+    #ProbIce session_server local_name remote_name
  </pre>
  In remote
  <Pre>
-    #ProbIce <session_server> local_name remote_name
+    #ProbIce session_server local_name remote_name
  </Pre>
 The ICE progress will auto started, the total ICE internal state will report to STDOUT, you can save the STDOUT to a txt file.
 
