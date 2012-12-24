@@ -22,3 +22,23 @@ the issue of blocking p2p.
  Open the solution file for Visual Studio 2008 in win floder. 
 
 
+## how to run ##
+
+* start the session server
+  There is simple session based chat server developed by Node.js
+<pre>
+    #cd dialog_server
+    #node inde.js
+</pre>
+
+* run in two peers
+ In local
+ <pre>
+    #ProbIce <session_server> local_name remote_name
+ </pre>
+ In remote
+ <Pre>
+    #ProbIce <session_server> local_name remote_name
+ </Pre>
+The ICE progress will auto started, the total ICE internal state will report to STDOUT, you can save the STDOUT to a txt file.
+

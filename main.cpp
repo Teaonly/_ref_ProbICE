@@ -7,8 +7,10 @@
 #include "peer.h"
 
 int main(int argc, char *argv[]) {
-    talk_base::LogMessage::LogThreads();
+    //talk_base::LogMessage::LogToDebug(talk_base::LS_VERBOSE);
+    talk_base::LogMessage::LogToDebug(talk_base::LS_ERROR);
     talk_base::LogMessage::LogTimestamps();
+    talk_base::LogMessage::LogThreads();
 
     if ( argc < 4) {
         std::cout << "usage: IceProbe server local_name  remote_name" << std::endl;
