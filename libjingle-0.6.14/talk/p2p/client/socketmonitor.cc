@@ -72,7 +72,7 @@ void SocketMonitor::OnMessage(talk_base::Message *message) {
         GetP2PChannel()->SignalConnectionMonitor.connect(
             this, &SocketMonitor::OnConnectionMonitor);
       }
-      PollSocket(true);
+      PollSocket(true, "Poll");
     }
     break;
 
@@ -88,7 +88,7 @@ void SocketMonitor::OnMessage(talk_base::Message *message) {
 
   case MSG_MONITOR_POLL:
     ASSERT(talk_base::Thread::Current() == channel_thread_);
-    PollSocket(true);
+	PollSocket(true, "Poll");
     break;
 
   case MSG_MONITOR_SIGNAL:
@@ -96,26 +96,27 @@ void SocketMonitor::OnMessage(talk_base::Message *message) {
       ASSERT(talk_base::Thread::Current() == monitoring_thread_);
       std::vector<ConnectionInfo> infos = connection_infos_;
       crit_.Leave();
-      SignalUpdate(this, "Timer", infos);
+      SignalUpdate(this, update_event, infos);
       crit_.Enter();
     }
     break;
   }
 }
 
-void SocketMonitor::OnConnectionMonitor(const std::string &event, P2PTransportChannel* channel) {
+void SocketMonitor::OnConnectionMonitor(const std::string &evt, P2PTransportChannel* channel) {
   talk_base::CritScope cs(&crit_);
   if (monitoring_)
-    PollSocket(false);
+    PollSocket(false, evt);
 }
 
-void SocketMonitor::PollSocket(bool poll) {
+void SocketMonitor::PollSocket(bool poll, const std::string& evt) {
   ASSERT(talk_base::Thread::Current() == channel_thread_);
   talk_base::CritScope cs(&crit_);
 
   // Gather connection infos
   P2PTransportChannel* p2p_channel = GetP2PChannel();
   if (p2p_channel != NULL) {
+    update_event = evt;
     connection_infos_.clear();
     const std::vector<Connection *> &connections = p2p_channel->connections();
     std::vector<Connection *>::const_iterator it;

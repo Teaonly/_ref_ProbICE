@@ -105,7 +105,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   void CancelPendingAllocate();
   void UpdateConnectionStates();
   void RequestSort();
-  void SortConnections();
+  void SortConnections(const std::string& evt);
   void SwitchBestConnectionTo(Connection* conn);
   void UpdateChannelState();
   void HandleWritable();

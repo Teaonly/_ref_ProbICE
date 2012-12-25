@@ -287,7 +287,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
     CreateConnection(port, *iter, iter->origin_port(), false);
   }
 
-  SortConnections();
+  SortConnections("PortReady");
 }
 
 // A new candidate is available, let listeners know
@@ -351,7 +351,7 @@ void P2PTransportChannel::OnUnknownAddress(
     // Update the list of connections since we just added another.  We do this
     // after sending the response since it could (in principle) delete the
     // connection in question.
-    SortConnections();
+    SortConnections("UnknownAddress");
   } else {
     // Hopefully this won't occur, because changing a destination address
     // shouldn't cause a new connection to fail
@@ -370,7 +370,7 @@ void P2PTransportChannel::OnCandidate(const Candidate& candidate) {
   CreateConnections(candidate, NULL, false);
 
   // Resort the connections list, which may have new elements.
-  SortConnections();
+  SortConnections("Candidate");
 }
 
 // Creates connections from all of the ports that we care about to the given
@@ -553,7 +553,7 @@ void P2PTransportChannel::RequestSort() {
 // Sort the available connections to find the best one.  We also monitor
 // the number of available connections and the current state so that we
 // can possibly kick off more allocators (for more connections).
-void P2PTransportChannel::SortConnections() {
+void P2PTransportChannel::SortConnections(const std::string& evt) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
 
   // Make sure the connection states are up-to-date since this affects how they
@@ -644,7 +644,7 @@ void P2PTransportChannel::SortConnections() {
   UpdateChannelState();
 
   // Notify of connection state change
-  SignalConnectionMonitor("Sort" ,this);
+  SignalConnectionMonitor(evt ,this);
 }
 
 // Track the best connection, and let listeners know
@@ -779,7 +779,7 @@ void P2PTransportChannel::OnMessage(talk_base::Message *pmsg) {
 // Handle queued up sort request
 void P2PTransportChannel::OnSort() {
   // Resort the connections based on the new statistics.
-  SortConnections();
+  SortConnections("ConnectionStateChanged");
 }
 
 // Handle queued up ping request

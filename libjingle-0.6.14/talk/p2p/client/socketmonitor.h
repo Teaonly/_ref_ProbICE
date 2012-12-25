@@ -75,9 +75,11 @@ class SocketMonitor : public talk_base::MessageHandler,
   P2PTransportChannel* GetP2PChannel() { return channel_->GetP2PChannel(); }
   void OnMessage(talk_base::Message *message);
   void OnConnectionMonitor(const std::string &event, P2PTransportChannel* channel);
-  void PollSocket(bool poll);
+  void PollSocket(bool poll, const std::string& evt);
 
   std::vector<ConnectionInfo> connection_infos_;
+  std::string update_event;
+
   TransportChannel* channel_;
   talk_base::Thread* channel_thread_;
   talk_base::Thread* monitoring_thread_;

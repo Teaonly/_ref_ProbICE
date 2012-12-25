@@ -199,8 +199,11 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std
     session_->OnIncomingMessage(msg);
 }
 
-void IceProber::onMonitorCallback(cricket::SocketMonitor *, const std::string& , const std::vector<cricket::ConnectionInfo>& ) {
-    // monitor
+void IceProber::onMonitorCallback(cricket::SocketMonitor* mo, const std::string& evt, const std::vector<cricket::ConnectionInfo>& connections) {
+	ASSERT(monitor_ == mo);
+	unsigned int now = talk_base::Time();
+	
+
 }
 
 void IceProber::onChannelWriteable(cricket::TransportChannel*) {

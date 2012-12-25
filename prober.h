@@ -12,7 +12,7 @@ class BasicPortAllocator;
 class P2PTransportChannel;
 class TransportChannel;
 class SocketMonitor;
-class ConnectionInfo;
+struct ConnectionInfo;
 class Transport;
 }
 namespace talk_base { 
@@ -52,7 +52,7 @@ protected:
     // monitor call back
     void onChannelWriteable(cricket::TransportChannel*);
     void onChannelReadPacket(cricket::TransportChannel*,const char*, size_t);
-    void onMonitorCallback(cricket::SocketMonitor *, const std::string&, const std::vector<cricket::ConnectionInfo>& );
+    void onMonitorCallback(cricket::SocketMonitor* mo, const std::string& evt, const std::vector<cricket::ConnectionInfo>& connections);
     
     //internal helper functions
     void createSession_s();
