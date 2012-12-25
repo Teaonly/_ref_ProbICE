@@ -216,7 +216,11 @@ void IceProber::onMonitorCallback(cricket::SocketMonitor* mo, const std::string&
         *output_ << "\ttimeout:" << connections[i].timeout;
         *output_ << "\tnew_connection:" << connections[i].new_connection;
         *output_ << "\trtt:" << connections[i].rtt;
+        *output_ << "\tsent:" << connections[i].sent_total_bytes;
+        *output_ << "\trecv:" << connections[i].recv_total_bytes;
         *output_ << std::endl;
+        *output_ << "\tLocal:" << connections[i].local_candidate.ToString() << std::endl;
+        *output_ << "\tRemote:" << connections[i].remote_candidate.ToString() << std::endl;
     }
     *output_ << std::endl;
     *output_ << std::endl;
