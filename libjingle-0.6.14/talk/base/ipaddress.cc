@@ -325,7 +325,7 @@ IPAddress TruncateIP(const IPAddress& ip, int length) {
     uint32 inner_mask = 0xFFFFFFFFLL  << inner_length;
     uint32* v6_as_ints =
         reinterpret_cast<uint32*>(&v6addr.s6_addr);
-    in6_addr ip_addr = ip.ipv6_address();
+    //in6_addr ip_addr = ip.ipv6_address();
     for (int i = 0; i < 4; ++i) {
       if (i == position) {
         uint32 host_order_inner = NetworkToHost32(v6_as_ints[i]);

@@ -30,7 +30,7 @@
 #ifdef _MSC_VER
 #include <intrin.h>
 #elif defined(__ANDROID__)
-#include <cpu-features.h>
+//#include <cpu-features.h>
 #elif defined(LINUX)
 #include "talk/base/linux.h"
 #endif
@@ -77,8 +77,9 @@ void CpuInfo::InitCpuFlags() {
   cpu_info_ = (cpu_info[2] & 0x00000200 ? kCpuHasSSSE3 : 0) |
     (cpu_info[3] & 0x04000000 ? kCpuHasSSE2 : 0);
 #elif defined(__ANDROID__) && defined(__arm__)
-  uint64_t features = android_getCpuFeatures();
-  cpu_info_ = ((features & ANDROID_CPU_ARM_FEATURE_NEON) ? kCpuHasNEON : 0);
+  //uint64_t features = android_getCpuFeatures();
+  //cpu_info_ = ((features & ANDROID_CPU_ARM_FEATURE_NEON) ? kCpuHasNEON : 0);
+  cpu_info_ = 0;
 #elif defined(LINUX) && defined(__arm__)
   cpu_info_ = 0;
   // Look for NEON support in /proc/cpuinfo
