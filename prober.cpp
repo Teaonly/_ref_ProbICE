@@ -202,8 +202,24 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std
 void IceProber::onMonitorCallback(cricket::SocketMonitor* mo, const std::string& evt, const std::vector<cricket::ConnectionInfo>& connections) {
 	ASSERT(monitor_ == mo);
 	unsigned int now = talk_base::Time();
-	
 
+    *output_ << "____________________________________________________" << std::endl;     
+    *output_ << "Update:" << now << std::endl;
+    *output_ << "Event:" << evt << std::endl;
+    *output_ << targetChannel_->ToString()  << std::endl;
+    *output_ << "--------Connections----------------" << std::endl;
+    for(int i = 0; i < (int)connections.size(); i++) {
+        *output_ << i << "." ;
+        *output_ << "\tbest:" << connections[i].best_connection;
+        *output_ << "\twritable:" << connections[i].writable;
+        *output_ << "\treadabel:" << connections[i].readable;
+        *output_ << "\ttimeout:" << connections[i].timeout;
+        *output_ << "\tnew_connection:" << connections[i].new_connection;
+        *output_ << "\trtt:" << connections[i].rtt;
+        *output_ << std::endl;
+    }
+    *output_ << std::endl;
+    *output_ << std::endl;
 }
 
 void IceProber::onChannelWriteable(cricket::TransportChannel*) {

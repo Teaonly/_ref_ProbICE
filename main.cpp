@@ -15,8 +15,14 @@ int main(int argc, char *argv[]) {
     if ( argc < 4) {
         std::cout << "usage: IceProbe server local_name  remote_name" << std::endl;
     }
+    
+    IceProber *pProber ;
+    if ( argc == 5)  {
+        pProber = new IceProber(argv[4]);
+    } else {
+        pProber = new IceProber();
+    }
 
-    IceProber *pProber = new IceProber();
     pProber->Login(argv[1], 1979, argv[2], argv[3]);
     pProber->Run();    
     
