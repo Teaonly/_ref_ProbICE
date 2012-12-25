@@ -103,7 +103,7 @@ void SocketMonitor::OnMessage(talk_base::Message *message) {
   }
 }
 
-void SocketMonitor::OnConnectionMonitor(P2PTransportChannel* channel) {
+void SocketMonitor::OnConnectionMonitor(const std::string &event, P2PTransportChannel* channel) {
   talk_base::CritScope cs(&crit_);
   if (monitoring_)
     PollSocket(false);

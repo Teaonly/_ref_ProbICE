@@ -89,7 +89,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   virtual P2PTransportChannel* GetP2PChannel() { return this; }
 
   // These are used by the connection monitor.
-  sigslot::signal1<P2PTransportChannel*> SignalConnectionMonitor;
+  sigslot::signal2<const std::string &, P2PTransportChannel*> SignalConnectionMonitor;
   const std::vector<Connection *>& connections() const { return connections_; }
   Connection* best_connection() const { return best_connection_; }
 

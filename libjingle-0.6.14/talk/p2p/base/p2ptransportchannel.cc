@@ -644,7 +644,7 @@ void P2PTransportChannel::SortConnections() {
   UpdateChannelState();
 
   // Notify of connection state change
-  SignalConnectionMonitor(this);
+  SignalConnectionMonitor("Sort" ,this);
 }
 
 // Track the best connection, and let listeners know
