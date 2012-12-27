@@ -10,6 +10,7 @@ Array.prototype.remove = function(e) {
 function PeerClass(sock) {
     this.pid = null;
     this.xmlWord = "";
+    this.sid = sock.remoteAddress + sock.remotePort;
     this.sock = sock;
 }
 var peerObjects = {};
@@ -28,9 +29,13 @@ PeerServer.processDialog = function(peer) {
         peer.pid = words[1];
 
         // kickoff the old one with same id
-        if ( peerObjects.hasOwnProperty(peer.pid) ) {
-            peerObjects[peer.pid].sock.end();
-            delete peerObjects[peer.pid];
+        for (var p in peerObjects) {
+            var pid = peerObjects[p].pid;
+
+            if ( pid == peer.pid) {
+                peer.sock.end();
+                return false;
+            }
         }
 
         // send the online list 
@@ -45,15 +50,23 @@ PeerServer.processDialog = function(peer) {
         for(var p in peerObjects) {
             peerObjects[p].sock.write(xml);
         } 
+
         //added to hash
-        peerObjects[ peer.pid ] = peer;         
+        peerObjects[peer.sid] = peer;         
+        console.log("New user " + peer.pid);
+
     } else if ( words[0] == "send") {
         if ( peer.pid == null)                  //login first
-            return;
+            return false;
         
         var remote = words[1];
-        if (peerObjects.hasOwnProperty(remote)) {
-            var remotePeer = peerObjects[remote];
+        for(var p in peerObjects) {
+            var pid = peerObjects[p].pid;
+            if ( pid != remote ) {
+                continue;
+            }
+
+            var remotePeer = peerObjects[p];
             var sndMessage = "<message:" + peer.pid;
             for ( var i = 2; i < words.length; i++) {
                 //remotePeer.sock.write("<message:" + peer.pid + ":" + content + ">");
@@ -61,8 +74,11 @@ PeerServer.processDialog = function(peer) {
             }
             sndMessage = sndMessage + ">"
             remotePeer.sock.write(sndMessage);
+            break;
         }
     }   
+
+    return true;
 }
 
 PeerServer.onAccept = function(sock) {
@@ -75,16 +91,22 @@ PeerServer.onAccept = function(sock) {
 
 PeerServer.onConnected = function(peer) {
 }
-PeerServer.onClose = function(peer, hasError) {
-    // remove from hash
-    delete peerObjects[peer.pid];
-    var xml = "<offline:" + peer.pid + ">";
 
-    // tell the others
-    for (var p in peerObjects) {
-        peerObjects[p].sock.write(xml);
-    }     
+PeerServer.onClose = function(peer, hasError) {
+    if ( peerObjects.hasOwnProperty(peer.sid) ) {
+        console.log("Delete user " + peer.pid);
+        
+        // remove from hash
+        delete peerObjects[peer.sid];
+        var xml = "<offline:" + peer.pid + ">";
+
+        // tell the others
+        for (var p in peerObjects) {
+            peerObjects[p].sock.write(xml);
+        }     
+    }
 }
+
 PeerServer.onData = function(peer, d) {
     for(var i = 0; i < d.length; i++) {
         peer.xmlWord += d.substr(i,1);
