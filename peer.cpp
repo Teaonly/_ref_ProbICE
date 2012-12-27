@@ -4,8 +4,6 @@
 
 #include "peer.h"
 
-#define _DEBUG_ 1
-
 Peer::Peer(const std::string &server, const unsigned short port, const std::string &id, talk_base::Thread *worker_thread) {
     server_address_ = server;
     server_port_ = port;
@@ -48,9 +46,7 @@ int Peer::SendMessage(const std::string &to, const std::vector<std::string>& msg
      
     sock_->Send( msgPayload.c_str(), msgPayload.size() );
 
-#ifdef _DEBUG_ 
-    std::cout << "Send string to server: " << msgPayload.c_str() << std::endl;
-#endif
+    std::cout << "\t===>: " << msgPayload.c_str() << std::endl;
 
     return 0;
 }
@@ -78,11 +74,6 @@ void Peer::onStart_w() {
 }
 
 void Peer::onConnectEvent(talk_base::AsyncSocket* socket) {
-
-#ifdef _DEBUG_ 
-    std::cout << "Socket is connected to server" << std::endl;
-#endif
-
     if ( sock_->GetState() == talk_base::Socket::CS_CONNECTED) {
         isOnline_ = true;
         
@@ -94,11 +85,7 @@ void Peer::onConnectEvent(talk_base::AsyncSocket* socket) {
 }
 
 void Peer::onCloseEvent(talk_base::AsyncSocket* socket, int err) {
-
-#ifdef _DEBUG_ 
-    std::cout << "Dectected socket is closed by server or can't connect to server" << std::endl;
-#endif
-
+    
     sock_->SignalConnectEvent.disconnect(this);
     sock_->SignalReadEvent.disconnect(this);
     sock_->SignalCloseEvent.disconnect(this); 
@@ -110,6 +97,8 @@ void Peer::onCloseEvent(talk_base::AsyncSocket* socket, int err) {
     if ( isOnline_ == true) {
         isOnline_ = false;
         SignalOffline();
+    } else {
+        SignalOnline(false);
     }
 }
 
@@ -118,10 +107,9 @@ void Peer::onReadEvent(talk_base::AsyncSocket* socket) {
 
     int ret = sock_->Recv(temp, sizeof(temp) - 1);
     if ( ret > 0) {
-#ifdef _DEBUG_
         temp[ret] = 0;
-        std::cout << "Get string from server = " << temp << std::endl;
-#endif
+        std::cout << "\t<===: " << temp << std::endl;
+
         for(int i = 0;i < ret; i++) {
             xmlBuffer.push_back( temp[i] );
             if ( temp[i] == '>') {

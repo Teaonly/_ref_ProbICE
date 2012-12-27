@@ -24,6 +24,7 @@ public:
     sigslot::signal2<PPSession*, const std::string&> SignalInfoMessage;
     sigslot::signal2<PPSession*, const PPMessage&> SignalErrorMessage;
     sigslot::signal1<PPSession*> SignalStateChanged;
+    sigslot::signal1<PPSession*> SignalTimeout;
 
     virtual void OnMessage(talk_base::Message *pmsg);
     void OnSignalingReady() { BaseSession::OnSignalingReady(); }

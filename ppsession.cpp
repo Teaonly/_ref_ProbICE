@@ -8,6 +8,8 @@ using namespace cricket;
 
 const std::string NS_PPSESSION("ppsession");
 
+const unsigned int MSG_TIMEOUT = 1;
+
 PPSession::PPSession( const std::string& sid,
         talk_base::Thread* signal_thread,
         talk_base::Thread* worker_thread,
@@ -26,6 +28,10 @@ PPSession::~PPSession() {
 
 void PPSession::OnMessage(talk_base::Message *pmsg) {
     BaseSession::OnMessage(pmsg);
+
+    if ( pmsg->message_id == MSG_TIMEOUT ) {
+        SignalTimeout(this);   
+    } 
 }
 
 void PPSession::OnIncomingMessage(const PPMessage& msg) {
@@ -202,8 +208,8 @@ void PPSession::OnTransportRequestSignaling(Transport* transport) {
 
 void PPSession::OnTransportConnecting(Transport* transport) {
     // This is an indication that we should begin watching the writability
-    // state of the transport.
-    OnTransportWritable(transport);
+    // state of the transport.  The ICE progress start from here.
+    OnTransportWritable(transport);         
 }
 
 void PPSession::OnTransportWritable(Transport* transport) {
@@ -214,13 +220,11 @@ void PPSession::OnTransportWritable(Transport* transport) {
     // terminate since we can't actually send data.  If the transport is writable,
     // cancel the timer.  Note that writability transitions may occur repeatedly
     // during the lifetime of the session.
-    /*
-       signaling_thread()->Clear(this, MSG_TIMEOUT);
-       if (transport->HasChannels() && !transport->writable()) {
-       signaling_thread()->PostDelayed(
-       10 * 1000, this, MSG_TIMEOUT);
-       }
-     */
+    signaling_thread()->Clear(this, MSG_TIMEOUT);
+    if (transport->HasChannels() && !transport->writable()) {
+        signaling_thread()->PostDelayed(
+                10 * 1000, this, MSG_TIMEOUT);
+    }
 }
 
 void PPSession::OnTransportCandidatesReady(Transport* transport,

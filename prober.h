@@ -48,6 +48,7 @@ protected:
     void onSignalRequest(PPSession *);
     void onOutgoingMessage(PPSession *, const PPMessage&);
     void onStateChanged(PPSession *);
+    void onSessionTimeout(PPSession *);
 
     // monitor call back
     void onChannelWriteable(cricket::TransportChannel*);

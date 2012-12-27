@@ -144,22 +144,36 @@ void IceProber::onStateChanged(PPSession *session) {
                 signal_thread_->Post(this, MSG_DO_ACCEPT);
             }
             break; 
+        case cricket::BaseSession::STATE_INPROGRESS:
+            std::cout << "Session is established!" << std::endl;
+            break; 
+        
         default:
             return;;
     }    
 }
 
+void IceProber::onSessionTimeout(PPSession *session) {
+    // If p2ptransportchannl can't be write always, timeout will happen
+    // We should send terminate to remote and shut this prober.
+    std::cout << "* Exception * Building p2p timeout ..." << std::endl;
+    std::cout << "Exiting..." << std::endl;
+    exit(-1);
+}
+
 void IceProber::onOnLine(bool isOk) {
     if ( isOk ) {
-        std::cout << "Connected to server is OK, wait remote" << std::endl;
+        std::cout << "Connected to server is OK, wait remote..." << std::endl;
     } else {
-        std::cout << "Can't connect to server, exit from server" << std::endl;
+        std::cout << "Can't connect to server, please start the session server." << std::endl;
+        std::cout << "Exiting..." << std::endl;
         exit(-1);
     }
 }
 
 void IceProber::onOffline() {
-    std::cout << "Disconnect to server" << std::endl;
+    std::cout << "* Exception * Disconnected from server!" << std::endl;
+    std::cout << "Exiting..." << std::endl;
     exit(-1);
 }
 
@@ -171,11 +185,13 @@ void IceProber::onRemoteLogin(const std::string& remote) {
 }
 
 void IceProber::onRemoteOnline(const std::string &remote) {
-    std::cout << "Remote (" << remote << ") is online" << std::endl;
+
 }
 
 void IceProber::onRemoteOffline(const std::string &remote) {
-    std::cout << "Remote (" << remote << ") is offline" << std::endl;
+    std::cout << "* Exception * Remote is disconnected from server!" << std::endl;
+    std::cout << "Exiting..." << std::endl;
+    exit(-1);
 }
 
 void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std::string>& msgBody) {
@@ -243,6 +259,7 @@ void IceProber::createSession_s() {
     session_->SignalRequestSignaling.connect(this, &IceProber::onSignalRequest);
     session_->SignalOutgoingMessage.connect(this, &IceProber::onOutgoingMessage);
     session_->SignalStateChanged.connect(this, &IceProber::onStateChanged);
+    session_->SignalTimeout.connect(this, &IceProber::onSessionTimeout);
 
     session_->set_allow_local_ips(true);
     session_->CreateChannel(content_name_, channel_name_);
