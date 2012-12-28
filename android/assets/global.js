@@ -12,6 +12,10 @@ function onBackPressed() {
 
 }
 
+function onPrintString(msg) {
+    page_index.onPrintString(msg);    
+}
+
 /*********************************************************
  * Top level ajax functions:
  *      1. Java run in single thread.

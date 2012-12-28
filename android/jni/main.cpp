@@ -49,7 +49,9 @@ public:
     }
     
     void OnPrintString(const std::string& msg) {
-        send(fd_, msg.c_str(), msg.length(), 0);        
+        LOGD("%s\n", msg.c_str() );
+        send(fd_, msg.c_str(), msg.length(), 0);     
+        send(fd_, "\0", 1, 0);   
     }
 
     void OnExit() {

@@ -1,5 +1,4 @@
 LOCAL_PATH:= $(call my-dir)
-MY_LOCAL_PATH = $(LOCAL_PATH)
 
 ###########################################################
 # building libexpat 
@@ -27,8 +26,8 @@ LOCAL_MODULE := libjingle
 LOCAL_CPP_EXTENSION := .cc .cpp
 LOCAL_CPPFLAGS := -O2 -g3 -Werror -Wall -Wno-switch -Wno-non-virtual-dtor -Wno-ctor-dtor-privacy -fno-rtti -fpic -fno-exceptions 
 LOCAL_CPPFLAGS += -DLOGGING=1 -DFEATURE_ENABLE_SSL -DHAVE_OPENSSL_SSL_H=1 -DEXPAT_RELATIVE_PATH -DHASHNAMESPACE=__gnu_cxx  -DHASH_NAMESPACE=__gnu_cxx -DPOSIX -DDISABLE_DYNAMIC_CAST -D_REENTRANT -DLINUX -DDISABLE_EFFECTS=1 -DANDROID -DARCH_CPU_LITTLE_ENDIAN 
-LOCAL_C_INCLUDES :=  $(MY_LOCAL_PATH)/expat $(MY_LOCAL_PATH)/openssl/include
-include $(MY_LOCAL_PATH)/libjingle_build.mk
+LOCAL_C_INCLUDES :=  $(LOCAL_PATH)/expat $(LOCAL_PATH)/openssl/include
+include $(LOCAL_PATH)/libjingle_build.mk
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libexpat\
                                 libcrypto\
@@ -50,9 +49,9 @@ LOCAL_MODULE := libapp
 LOCAL_CPP_EXTENSION := .cc .cpp
 LOCAL_CPPFLAGS := -O2 -g3 -Werror -Wall -Wno-switch -Wno-non-virtual-dtor -Wno-ctor-dtor-privacy -fno-rtti -fpic -fno-exceptions 
 LOCAL_CPPFLAGS += -DLOGGING=1 -DFEATURE_ENABLE_SSL -DHAVE_OPENSSL_SSL_H=1 -DEXPAT_RELATIVE_PATH -DHASHNAMESPACE=__gnu_cxx  -DHASH_NAMESPACE=__gnu_cxx -DPOSIX -DDISABLE_DYNAMIC_CAST -D_REENTRANT -DLINUX -DDISABLE_EFFECTS=1 -DANDROID -DARCH_CPU_LITTLE_ENDIAN 
-LOCAL_C_INCLUDES :=  $(MY_LOCAL_PATH)/expat $(MY_LOCAL_PATH)/openssl/include $(MY_LOCAL_PATH) 
+LOCAL_C_INCLUDES :=  $(LOCAL_PATH)/expat $(LOCAL_PATH)/openssl/include $(LOCAL_PATH) 
 
-include $(MY_LOCAL_PATH)/app_build.mk
+include $(LOCAL_PATH)/app_build.mk
 
 #LOCAL_WHOLE_STATIC_LIBRARIES := libjingle
 

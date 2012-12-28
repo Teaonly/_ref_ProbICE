@@ -108,11 +108,11 @@ public class MainActivity extends Activity
     // 
     // ************************************************************************
     public void DebugPrint(String msg) {
-        Log.d(TAG, msg);
+         
     } 
 
     public void StartNative(String server, String local, String remote) {
-        nativeMain(this, server, local, remote);    
+        nativeMain(nSock.getFileDescriptor(), server, local, remote);    
     }
 
     // ************************************************************************
@@ -145,7 +145,7 @@ public class MainActivity extends Activity
         @Override
         public void onProgressUpdate(GenericTask task, Object param) {
             String xmlMessage = (String) param;
-            DebugPrint(xmlMessage);
+            webview.loadUrl("javascript:onPrintString('" + xmlMessage + "');");          
         }   
     };
     
@@ -183,6 +183,6 @@ public class MainActivity extends Activity
     // Definement of native functions
     // 
     // ************************************************************************
-    static private native int nativeMain(MainActivity obj, String server, String local, String remote);
+    static private native int nativeMain(FileDescriptor fd, String server, String local, String remote);
     
 }
