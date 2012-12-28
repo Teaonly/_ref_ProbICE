@@ -25,7 +25,8 @@ public:
     sigslot::signal1<const std::string &> SignalRemoteLogin;
     sigslot::signal1<const std::string &> SignalRemoteOffline;
     sigslot::signal2<const std::string &, const std::vector<std::string>& > SignalRemoteMessage;
-    
+
+    sigslot::signal1<const std::string &> SignalPrintString;    
 protected: 
     void onStart_w();
     void onConnectEvent(talk_base::AsyncSocket* socket);

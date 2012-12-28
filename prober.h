@@ -35,6 +35,9 @@ public:
     
     void Run();
 
+    sigslot::signal1<const std::string&> SignalPrintString;
+    sigslot::signal0<> SignalExit;
+
 protected:
     // call back from peer
     void onOnLine(bool isOk);
@@ -43,7 +46,8 @@ protected:
     void onRemoteOnline(const std::string&);
     void onRemoteOffline(const std::string&);
     void onRemoteMessage(const std::string&, const std::vector<std::string>& );
-
+    void onPrintString(const std::string& );
+        
     // call back from PPSession
     void onSignalRequest(PPSession *);
     void onOutgoingMessage(PPSession *, const PPMessage&);

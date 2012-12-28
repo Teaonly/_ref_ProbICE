@@ -1,2 +1,5 @@
 LOCAL_SRC_FILES += \
-            main.cpp 
+            main.cpp \
+            peer.cpp \
+            ppsession.cpp \
+            prober.cpp 

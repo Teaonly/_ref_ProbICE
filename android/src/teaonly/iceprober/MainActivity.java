@@ -51,7 +51,10 @@ public class MainActivity extends Activity
 	    webview.setVerticalScrollBarEnabled(false);
 	    webview.addJavascriptInterface(this, "App");
 	    webview.loadUrl("file:///android_asset/index.html");
-        
+       
+        //Load jni libraries
+        System.loadLibrary("jingle");
+        System.loadLibrary("app");
     }
 
     @Override
@@ -73,7 +76,11 @@ public class MainActivity extends Activity
     public void DebugPrint(String msg) {
         Log.d(TAG, msg);
     } 
-    
+
+    public void StartNative(String server, String local, String remote) {
+        nativeMain(this, server, local, remote);    
+    }
+
     // ************************************************************************
     // Definement of CGI function from GUI (broswer side), run in single thread
     // 
@@ -90,7 +97,12 @@ public class MainActivity extends Activity
             return null;
         }
     };
-
     // end of CGI function  
+
+    // ************************************************************************
+    // Definement of native functions
+    // 
+    // ************************************************************************
+    static private native int nativeMain(MainActivity obj, String server, String local, String remote);
 
 }

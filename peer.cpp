@@ -46,7 +46,8 @@ int Peer::SendMessage(const std::string &to, const std::vector<std::string>& msg
      
     sock_->Send( msgPayload.c_str(), msgPayload.size() );
 
-    std::cout << "\t===>: " << msgPayload.c_str() << std::endl;
+    //std::cout << "\t===>: " << msgPayload.c_str() << std::endl;
+    SignalPrintString( "\t===>: " + msgPayload );
 
     return 0;
 }
@@ -108,7 +109,11 @@ void Peer::onReadEvent(talk_base::AsyncSocket* socket) {
     int ret = sock_->Recv(temp, sizeof(temp) - 1);
     if ( ret > 0) {
         temp[ret] = 0;
-        std::cout << "\t<===: " << temp << std::endl;
+
+        //std::cout << "\t<===: " << temp << std::endl;
+        std::string tempStr("\t<===: ");
+        tempStr = tempStr + std::string( (const char *)temp );
+        SignalPrintString( tempStr );
 
         for(int i = 0;i < ret; i++) {
             xmlBuffer.push_back( temp[i] );

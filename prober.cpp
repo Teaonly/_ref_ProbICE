@@ -81,6 +81,7 @@ void IceProber::Login(const std::string &server,
     peer_->SignalRemoteOnline.connect(this, &IceProber::onRemoteOnline);
     peer_->SignalRemoteOffline.connect(this, &IceProber::onRemoteOffline);
     peer_->SignalRemoteMessage.connect(this, &IceProber::onRemoteMessage);
+    peer_->SignalPrintString.connect(this, &IceProber::onPrintString);
     peer_->Start();
     
     signal_thread_->Post(this, MSG_CREATE_SESSION);
@@ -145,7 +146,8 @@ void IceProber::onStateChanged(PPSession *session) {
             }
             break; 
         case cricket::BaseSession::STATE_INPROGRESS:
-            std::cout << "Session is established!" << std::endl;
+            //std::cout << "Session is established!" << std::endl;
+            SignalPrintString( "Session is established!" );
             break; 
         
         default:
@@ -156,25 +158,33 @@ void IceProber::onStateChanged(PPSession *session) {
 void IceProber::onSessionTimeout(PPSession *session) {
     // If p2ptransportchannl can't be write always, timeout will happen
     // We should send terminate to remote and shut this prober.
-    std::cout << "* Exception * Building p2p timeout ..." << std::endl;
-    std::cout << "Exiting..." << std::endl;
-    exit(-1);
+    
+    //std::cout << "* Exception * Building p2p timeout ..." << std::endl;
+    SignalPrintString ( "* Exception * Building p2p timeout ..." );
+
+    //exit(-1);
+    SignalExit();
 }
 
 void IceProber::onOnLine(bool isOk) {
     if ( isOk ) {
-        std::cout << "Connected to server is OK, wait remote..." << std::endl;
+        //std::cout << "Connected to server is OK, wait remote..." << std::endl;
+        SignalPrintString ("Connected to server is OK, wait remote...");
     } else {
-        std::cout << "Can't connect to server, please start the session server." << std::endl;
-        std::cout << "Exiting..." << std::endl;
-        exit(-1);
+        //std::cout << "Can't connect to server, please start the session server." << std::endl;
+        SignalPrintString("Can't connect to server, please start the session server.");
+        
+        //exit(-1);
+        SignalExit();
     }
 }
 
 void IceProber::onOffline() {
-    std::cout << "* Exception * Disconnected from server!" << std::endl;
-    std::cout << "Exiting..." << std::endl;
-    exit(-1);
+    //std::cout << "* Exception * Disconnected from server!" << std::endl;
+    SignalPrintString("* Exception * Disconnected from server!");
+
+    //exit(-1);
+    SignalExit();
 }
 
 void IceProber::onRemoteLogin(const std::string& remote) {
@@ -189,9 +199,11 @@ void IceProber::onRemoteOnline(const std::string &remote) {
 }
 
 void IceProber::onRemoteOffline(const std::string &remote) {
-    std::cout << "* Exception * Remote is disconnected from server!" << std::endl;
-    std::cout << "Exiting..." << std::endl;
-    exit(-1);
+    //std::cout << "* Exception * Remote is disconnected from server!" << std::endl;
+    SignalPrintString("* Exception * Remote is disconnected from server!");
+
+    //exit(-1);
+    SignalExit();
 }
 
 void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std::string>& msgBody) {
@@ -213,6 +225,10 @@ void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std
     
     // this function is running in signal_thread_ 
     session_->OnIncomingMessage(msg);
+}
+
+void IceProber::onPrintString(const std::string& msg) {
+    SignalPrintString(msg);
 }
 
 void IceProber::onMonitorCallback(cricket::SocketMonitor* mo, const std::string& evt, const std::vector<cricket::ConnectionInfo>& connections) {
@@ -251,7 +267,12 @@ void IceProber::onChannelReadPacket(cricket::TransportChannel*,const char* data,
     char temp[128];
     memcpy(temp, data, len);
     temp[len] = 0;
-    std::cout << "Get packet:" << temp << std::endl;
+
+    std::string tempStr = "Get packet:";
+    tempStr = tempStr + std::string((const char*)temp);
+
+    //std::cout << "Get packet:" << temp << std::endl;
+    SignalPrintString(tempStr);
 }
 
 void IceProber::createSession_s() {

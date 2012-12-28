@@ -28,14 +28,10 @@ PeerServer.processDialog = function(peer) {
     if ( words[0] == "login") {
         peer.pid = words[1];
 
-        // kickoff the old one with same id
-        for (var p in peerObjects) {
-            var pid = peerObjects[p].pid;
-
-            if ( pid == peer.pid) {
-                peer.sock.end();
-                return false;
-            }
+        // kickoff the new one with same id
+        if ( peerObjects.hasOwnProperty(peer.pid) ) {
+            peer.sock.end();
+            return false;
         }
 
         // send the online list 
@@ -52,7 +48,7 @@ PeerServer.processDialog = function(peer) {
         } 
 
         //added to hash
-        peerObjects[peer.sid] = peer;         
+        peerObjects[peer.pid] = peer;         
         console.log("New user " + peer.pid);
 
     } else if ( words[0] == "send") {
@@ -60,13 +56,9 @@ PeerServer.processDialog = function(peer) {
             return false;
         
         var remote = words[1];
-        for(var p in peerObjects) {
-            var pid = peerObjects[p].pid;
-            if ( pid != remote ) {
-                continue;
-            }
 
-            var remotePeer = peerObjects[p];
+        if ( peerObjects.hasOwnProperty(remote) ) {
+            var remotePeer = peerObjects[remote];
             var sndMessage = "<message:" + peer.pid;
             for ( var i = 2; i < words.length; i++) {
                 //remotePeer.sock.write("<message:" + peer.pid + ":" + content + ">");
@@ -74,7 +66,6 @@ PeerServer.processDialog = function(peer) {
             }
             sndMessage = sndMessage + ">"
             remotePeer.sock.write(sndMessage);
-            break;
         }
     }   
 
@@ -93,11 +84,16 @@ PeerServer.onConnected = function(peer) {
 }
 
 PeerServer.onClose = function(peer, hasError) {
-    if ( peerObjects.hasOwnProperty(peer.sid) ) {
-        console.log("Delete user " + peer.pid);
+    if ( peerObjects.hasOwnProperty(peer.pid) ) {
         
+        // We delete *REAL* user only
+        if ( peer.sid != peerObjects[peer.pid].sid ) {
+            return;
+        }
+
+        console.log("Delete user " + peer.pid);
         // remove from hash
-        delete peerObjects[peer.sid];
+        delete peerObjects[peer.pid];
         var xml = "<offline:" + peer.pid + ">";
 
         // tell the others
