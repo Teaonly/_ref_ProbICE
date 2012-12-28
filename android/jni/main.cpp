@@ -29,28 +29,45 @@ static std::string convert_jstring(JNIEnv *env, const jstring &js) {
     return str;
 }
 
+static jint get_native_fd(JNIEnv* env, jclass clz, jobject fdesc) {
+  jclass clazz;
+  jfieldID fid;
+
+  /* get the fd from the FileDescriptor */
+  if (!(clazz = env->GetObjectClass(fdesc)) ||
+    !(fid = env->GetFieldID(clazz,"descriptor","I"))) return -1;
+
+  /* return the descriptor */
+  return env->GetIntField(fdesc,fid);
+}
+
 class SimpleConsole : public sigslot::has_slots<> {
 public:
-    SimpleConsole() {
+    SimpleConsole(int fd):fd_(fd) {
     }
     ~SimpleConsole() {
     }
     
     void OnPrintString(const std::string& msg) {
-        LOGD("%s\n", msg.c_str());
+        send(fd_, msg.c_str(), msg.length(), 0);        
     }
 
     void OnExit() {
     }
+private:
+    int fd_;    
 }; 
 
 
 static IceProber* pProber;
 static SimpleConsole* console;
+static int event_fd;
+
 JNIEXPORT jint JNICALL JNIDEFINE(nativeMain)(JNIEnv* env, jclass clz, jobject obj, jstring jserver, jstring jlocal, jstring jremote) {
     std::string server = convert_jstring(env, jserver);
     std::string local = convert_jstring(env, jlocal);
     std::string remote = convert_jstring(env, jremote); 
+    event_fd = get_native_fd(env, clz, obj);
 
     //talk_base::LogMessage::LogToDebug(talk_base::LS_VERBOSE);
     talk_base::LogMessage::LogToDebug(talk_base::LS_ERROR);
@@ -58,7 +75,7 @@ JNIEXPORT jint JNICALL JNIDEFINE(nativeMain)(JNIEnv* env, jclass clz, jobject ob
     talk_base::LogMessage::LogThreads();
 
     pProber = new IceProber("/sdcard/pplog.txt");
-    console = new SimpleConsole();
+    console = new SimpleConsole(event_fd);
 
     pProber->SignalPrintString.connect( console, &SimpleConsole::OnPrintString);
     pProber->SignalExit.connect( console, &SimpleConsole::OnExit);
