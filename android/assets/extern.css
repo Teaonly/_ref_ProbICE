@@ -1,0 +1,24 @@
+div.live_image_box {
+    display: block;
+    background-color: black; 
+    text-align:center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div.center {
+    text-align:center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div.bottom {
+    position: absolute; 
+    bottom:0;
+    right:0;
+    margin:auto 0; 
+}
+
+.ui-li-heading { overflow: visible; }
+.ui-li-thumb { top: 1em; }
+.ui-li-rating { font-size: 32px; }
