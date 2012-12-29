@@ -77,7 +77,8 @@ public class MainActivity extends Activity
     @Override
     public void onPause() {
         super.onPause();
-        finish(); 
+        finish();
+        System.exit(0); 
     }
     
     // ************************************************************************
