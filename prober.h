@@ -36,7 +36,7 @@ public:
     void Run();
 
     sigslot::signal1<const std::string&> SignalPrintString;
-    sigslot::signal0<> SignalExit;
+    sigslot::signal1<const int> SignalExit;
 
 protected:
     // call back from peer

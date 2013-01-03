@@ -348,6 +348,7 @@ class Connection : public talk_base::MessageHandler,
   void UpdateState(uint32 now);
 
   // Called when this connection should try checking writability again.
+  uint32 last_ping_received() const { return last_ping_received_; }
   uint32 last_ping_sent() const { return last_ping_sent_; }
   void Ping(uint32 now);
 

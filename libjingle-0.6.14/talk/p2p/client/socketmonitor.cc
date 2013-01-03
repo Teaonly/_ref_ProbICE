@@ -35,6 +35,11 @@ const uint32 MSG_MONITOR_START = 2;
 const uint32 MSG_MONITOR_STOP = 3;
 const uint32 MSG_MONITOR_SIGNAL = 4;
 
+struct IceEvent : public talk_base::MessageData {
+    IceEvent(const std::string &evt) : evt_(evt) {}
+    std::string evt_;
+};
+
 SocketMonitor::SocketMonitor(TransportChannel* channel,
                              talk_base::Thread* worker_thread,
                              talk_base::Thread* monitor_thread) {
@@ -95,6 +100,9 @@ void SocketMonitor::OnMessage(talk_base::Message *message) {
     {
       ASSERT(talk_base::Thread::Current() == monitoring_thread_);
       std::vector<ConnectionInfo> infos = connection_infos_;
+      std::string update_event =  static_cast<IceEvent*>(message->pdata)->evt_;
+      delete message->pdata; 
+          
       crit_.Leave();
       SignalUpdate(this, update_event, infos);
       crit_.Enter();
@@ -116,7 +124,6 @@ void SocketMonitor::PollSocket(bool poll, const std::string& evt) {
   // Gather connection infos
   P2PTransportChannel* p2p_channel = GetP2PChannel();
   if (p2p_channel != NULL) {
-    update_event = evt;
     connection_infos_.clear();
     const std::vector<Connection *> &connections = p2p_channel->connections();
     std::vector<Connection *>::const_iterator it;
@@ -132,11 +139,14 @@ void SocketMonitor::PollSocket(bool poll, const std::string& evt) {
           (connection->write_state() == Connection::STATE_WRITE_TIMEOUT);
       info.new_connection = !connection->reported();
       connection->set_reported(true);
+      info.pruned = connection->pruned();
       info.rtt = connection->rtt();
       info.sent_total_bytes = connection->sent_total_bytes();
       info.sent_bytes_second = connection->sent_bytes_second();
       info.recv_total_bytes = connection->recv_total_bytes();
       info.recv_bytes_second = connection->recv_bytes_second();
+      info.last_ping_sent = connection->last_ping_sent();
+      info.last_ping_received = connection->last_ping_received();
       info.local_candidate = connection->local_candidate();
       info.remote_candidate = connection->remote_candidate();
       info.key = connection;
@@ -146,7 +156,7 @@ void SocketMonitor::PollSocket(bool poll, const std::string& evt) {
 
   // Signal the monitoring thread, start another poll timer
 
-  monitoring_thread_->Post(this, MSG_MONITOR_SIGNAL);
+  monitoring_thread_->Post(this, MSG_MONITOR_SIGNAL, new IceEvent(evt) );
   if (poll)
     channel_thread_->PostDelayed(rate_, this, MSG_MONITOR_POLL);
 }

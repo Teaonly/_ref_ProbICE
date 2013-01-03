@@ -44,11 +44,14 @@ struct ConnectionInfo {
   bool readable;
   bool timeout;
   bool new_connection;
+  bool pruned;;
   size_t rtt;
   size_t sent_total_bytes;
   size_t sent_bytes_second;
   size_t recv_total_bytes;
   size_t recv_bytes_second;
+  size_t last_ping_sent;
+  size_t last_ping_received;
   Candidate local_candidate;
   Candidate remote_candidate;
   void *key;
@@ -78,7 +81,6 @@ class SocketMonitor : public talk_base::MessageHandler,
   void PollSocket(bool poll, const std::string& evt);
 
   std::vector<ConnectionInfo> connection_infos_;
-  std::string update_event;
 
   TransportChannel* channel_;
   talk_base::Thread* channel_thread_;

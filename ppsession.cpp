@@ -223,7 +223,7 @@ void PPSession::OnTransportWritable(Transport* transport) {
     signaling_thread()->Clear(this, MSG_TIMEOUT);
     if (transport->HasChannels() && !transport->writable()) {
         signaling_thread()->PostDelayed(
-                10 * 1000, this, MSG_TIMEOUT);
+                50 * 1000, this, MSG_TIMEOUT);
     }
 }
 

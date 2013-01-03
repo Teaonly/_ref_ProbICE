@@ -34,7 +34,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES := libexpat\
                                 libssl
 
 LOCAL_SHARED_LIBRARIES := libcutils\
-                          libgnustl\
+                          libstlport\
                           libdl 
 
 LOCAL_LDLIBS := -llog
@@ -57,7 +57,7 @@ include $(LOCAL_PATH)/app_build.mk
 
 LOCAL_SHARED_LIBRARIES := libjingle\
                           libcutils\
-                          libgnustl\
+                          libstlport\
                           libdl 
 
 LOCAL_LDLIBS := -llog

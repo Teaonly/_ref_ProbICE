@@ -63,7 +63,8 @@ void IceProber::Login(const std::string &server,
     remote_name_ = remoteName;
 
     network_manager_ = new talk_base::BasicNetworkManager();
-    talk_base::SocketAddress address_stun("stun.l.google.com", 19302);
+    //talk_base::SocketAddress address_stun("stun.l.google.com", 19302);
+    talk_base::SocketAddress address_stun("stunserver.org", 3478);
     talk_base::SocketAddress address_nil;
     port_allocator_ = 
         new cricket::BasicPortAllocator(network_manager_,
@@ -163,7 +164,7 @@ void IceProber::onSessionTimeout(PPSession *session) {
     SignalPrintString ( "* Exception * Building p2p timeout ..." );
 
     //exit(-1);
-    SignalExit();
+    SignalExit(-1);
 }
 
 void IceProber::onOnLine(bool isOk) {
@@ -174,8 +175,8 @@ void IceProber::onOnLine(bool isOk) {
         //std::cout << "Can't connect to server, please start the session server." << std::endl;
         SignalPrintString("Can't connect to server, please start the session server.");
         
-        //exit(-1);
-        SignalExit();
+        //exit(0);
+        SignalExit(0);
     }
 }
 
@@ -184,7 +185,7 @@ void IceProber::onOffline() {
     SignalPrintString("* Exception * Disconnected from server!");
 
     //exit(-1);
-    SignalExit();
+    SignalExit(0);
 }
 
 void IceProber::onRemoteLogin(const std::string& remote) {
@@ -203,7 +204,7 @@ void IceProber::onRemoteOffline(const std::string &remote) {
     SignalPrintString("* Exception * Remote is disconnected from server!");
 
     //exit(-1);
-    SignalExit();
+    SignalExit(-1);
 }
 
 void IceProber::onRemoteMessage(const std::string &remote, const std::vector<std::string>& msgBody) {
@@ -233,10 +234,19 @@ void IceProber::onPrintString(const std::string& msg) {
 
 void IceProber::onMonitorCallback(cricket::SocketMonitor* mo, const std::string& evt, const std::vector<cricket::ConnectionInfo>& connections) {
 	ASSERT(monitor_ == mo);
-	unsigned int now = talk_base::Time();
+    
+    time_t tim = time(NULL);
+    struct tm * now = localtime(&tim);
+    char *time_string = asctime(now);
+    if (time_string) {
+        size_t time_len = strlen(time_string);
+        if (time_len > 0) {
+        time_string[time_len-1] = 0;    // trim off terminating \n
+        }
+    }
 
     *output_ << "____________________________________________________" << std::endl;     
-    *output_ << "Update:" << now << std::endl;
+    *output_ << "Update:" << time_string <<  "\t" << talk_base::Time() << std::endl;
     *output_ << "Event:" << evt << std::endl;
     *output_ << targetChannel_->ToString()  << std::endl;
     *output_ << "--------Connections----------------" << std::endl;
@@ -247,6 +257,10 @@ void IceProber::onMonitorCallback(cricket::SocketMonitor* mo, const std::string&
         *output_ << "\treadabel:" << connections[i].readable;
         *output_ << "\ttimeout:" << connections[i].timeout;
         *output_ << "\tnew_connection:" << connections[i].new_connection;
+        *output_ << "\tpruned:" << connections[i].pruned;
+        *output_ << std::endl;
+        *output_ << "\t\tlast_ping_sent:" << connections[i].last_ping_sent;
+        *output_ << "\tlast_ping_recvied:" << connections[i].last_ping_sent;
         *output_ << "\trtt:" << connections[i].rtt;
         *output_ << "\tsent:" << connections[i].sent_total_bytes;
         *output_ << "\trecv:" << connections[i].recv_total_bytes;

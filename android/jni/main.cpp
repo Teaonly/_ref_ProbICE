@@ -54,7 +54,10 @@ public:
         send(fd_, "\0", 1, 0);   
     }
 
-    void OnExit() {
+    void OnExit(const int ret) {
+        if ( ret < 0) {
+            exit(ret);
+        }
     }
 private:
     int fd_;    
