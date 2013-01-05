@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <time.h>
 
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/p2p/base/p2ptransportchannel.h"
